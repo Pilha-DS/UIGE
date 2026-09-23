@@ -2,18 +2,50 @@
 
 Motor para Linux capaz de gerar interfaces gráficas automaticamente para aplicações originalmente operadas por terminal, utilizando descrições declarativas em JSON ou descoberta automática dos comandos da aplicação.
 
-# Nome do Projeto
+```
+                     ┌─────────────────────┐
+                     │       UIGE UI       │
+                     │ GTK / Qt / WebView  │
+                     └──────────┬──────────┘
+                                │
+                         UI Definition
+                                │
+                     ┌──────────▼──────────┐
+                     │    UIGE Engine      │
+                     │                    │
+                     │ Components         │
+                     │ Validation         │
+                     │ Command Builder    │
+                     │ Output Parser      │
+                     └───────┬─────┬──────┘
+                             │     │
+              ┌──────────────┘     └──────────────┐
+              │                                    │
+     ┌────────▼────────┐                 ┌─────────▼─────────┐
+     │ Manifest Mode   │                 │  Universal Mode   │
+     │                 │                 │                   │
+     │ *.uige.json     │                 │ --help            │
+     │ criado à mão    │                 │ help              │
+     │ ou oficialmente │                 │ man               │
+     └────────┬────────┘                 │ completions       │
+              │                          └─────────┬─────────┘
+              └──────────────┬─────────────────────┘
+                             │
+                     ┌───────▼────────┐
+                     │ Command Runner │
+                     │                │
+                     │ git status     │
+                     │ pacman -S ...  │
+                     │ docker ps      │
+                     └───────┬────────┘
+                             │
+                     ┌───────▼────────┐
+                     │ Linux CLI App  │
+                     └────────────────┘
+```
 
-<details>
-  <summary>🇺🇸 Read in English</summary>
+1. Manifest Mode
 
-  ## Description
-  This is a great project.
-</details>
+É o modo confiável.
 
-<details>
-  <summary>🇧🇷 Leia em Português</summary>
-
-  ## Descrição
-  Este é um ótimo projeto.
-</details>
+Existe um JSON dizendo exatamente como determinada aplicação funciona.
