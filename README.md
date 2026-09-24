@@ -4,7 +4,7 @@
 
 O objetivo é transformar ferramentas como Git, Docker, Nmap, FFmpeg, Curl, Pacman, Systemctl, Maven e Kubectl em experiências gráficas consistentes, sem esconder do sistema a capacidade real dessas ferramentas.
 
-> **Simples para executar, poderoso para configurar.**
+> **Simples para configurar, poderoso para executar.**
 
 ## Estado do projeto
 
