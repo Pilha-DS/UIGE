@@ -23,6 +23,20 @@ O usuário trabalha principalmente com:
 
 Conceitos internos como `Manifest`, `ExecutionContext`, relações entre parâmetros e `WorkflowStep` devem permanecer detalhes técnicos sempre que possível.
 
+## Tecnologias
+
+| Camada | Escolha |
+|---|---|
+| Core | Rust |
+| UI | Slint |
+| Async / processos | Tokio |
+| Persistência | SQLite |
+| Manifests / configuração | Serde + JSON |
+| Design | inspirado no GNOME HIG |
+| Plataformas | Linux (alvo inicial) |
+
+Detalhes e limites em [`docs/architecture/technology.md`](docs/architecture/technology.md). Decisão: [`docs/decisions/0001-stack-tecnologica.md`](docs/decisions/0001-stack-tecnologica.md).
+
 ## Documentação
 
 A documentação é separada por responsabilidade:

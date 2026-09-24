@@ -33,6 +33,8 @@ Automation ──references──> Profile
 
 Workspaces, Profiles, Launchers e Automations devem referenciar objetos canônicos em vez de copiar suas definições.
 
-## Dependência de tecnologia
+## Tecnologia
 
-A arquitetura conceitual não deve ser acoplada prematuramente a uma linguagem, framework de UI ou mecanismo de persistência. Escolhas desse tipo devem ser registradas em ADRs em `docs/decisions/`.
+A stack adotada (Rust, Slint, Tokio, SQLite, Serde + JSON) e o suporte a plataformas estão em [`technology.md`](technology.md).
+
+A decisão correspondente é o [`ADR 0001`](../decisions/0001-stack-tecnologica.md). A arquitetura conceitual permanece independente de detalhes de crate; novas escolhas de tecnologia exigem ADR.

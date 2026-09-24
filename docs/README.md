@@ -35,8 +35,9 @@ Se um texto responde a várias perguntas, ele deve ser dividido e conectado por 
 2. `product/features.md`
 3. `domain/glossary.md`
 4. `architecture/overview.md`
-5. `standards/README.md`
-6. `ai/README.md`
+5. `architecture/technology.md`
+6. `standards/README.md`
+7. `ai/README.md`
 
 ## Documento anterior
 

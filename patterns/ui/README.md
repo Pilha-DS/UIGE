@@ -1,5 +1,25 @@
 # UI Patterns
 
-Adicionar aqui exemplos concretos de modais, formulários, ações destrutivas, execução, output e seleção de Workdir, e definicao de qualquer widget utilizavel.
+Exemplos canônicos de componentes da interface.
 
-Cada padrão deve indicar quando usar e quando não usar.
+Os padrões nascem **durante o desenvolvimento**, na primeira necessidade real. Até lá, o catálogo e as regras ficam em `docs/standards/ui.md`.
+
+Cada padrão deve indicar:
+
+- quando usar;
+- quando não usar;
+- estrutura / comportamento;
+- variantes permitidas;
+- exemplo canônico.
+
+Sugestão de nomes:
+
+```text
+button.md
+modal.md
+form.md
+feedback-states.md
+destructive-confirm.md
+execution-output.md
+workdir-picker.md
+```
