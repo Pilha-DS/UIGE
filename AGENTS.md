@@ -33,13 +33,17 @@ Não ignorar um conflito silenciosamente.
 
 A IA deve localizar e ler os documentos relevantes. Não assumir que o README contém toda a especificação.
 
+Mapa detalhado de arquivos: `.cursor/rules/00-project.mdc` e `docs/ai/workflow.md`.
+
 Para uma mudança de:
 
-- funcionalidade → ler `docs/product/`;
-- conceito → ler `docs/domain/`;
-- estrutura → ler `docs/architecture/`;
-- convenção → ler `docs/standards/`;
-- decisão central → consultar `docs/decisions/`.
+- funcionalidade → `docs/product/` (`vision.md`, `features.md`, `flows.md`);
+- conceito → `docs/domain/glossary.md`;
+- estrutura → `docs/architecture/` (`overview.md` + modelo afetado);
+- stack / plataformas → `docs/architecture/technology.md` e ADRs;
+- UI → `docs/standards/ui.md` e `patterns/ui/`;
+- convenção → `docs/standards/`;
+- decisão central → `docs/decisions/`.
 
 
 

@@ -3,10 +3,24 @@
 ## Antes de alterar
 
 1. Ler `README.md` e `AGENTS.md`.
-2. Identificar documentos relacionados.
-3. Verificar padrões em `docs/standards/` e `/patterns/`.
-4. Verificar ADRs relevantes.
+2. Ler o mapa de leitura em `.cursor/rules/00-project.mdc` e abrir os arquivos do escopo.
+3. Verificar padrões em `docs/standards/` e exemplos em `/patterns/`.
+4. Verificar ADRs relevantes em `docs/decisions/`.
 5. Definir exatamente o escopo da mudança.
+
+### Atalho por tipo de tarefa
+
+| Tarefa | Arquivos mínimos |
+|---|---|
+| Funcionalidade de produto | `docs/product/features.md`, `docs/product/flows.md` |
+| Termo / conceito | `docs/domain/glossary.md` |
+| Arquitetura / relações | `docs/architecture/overview.md` + modelo afetado |
+| Stack / libs / OS | `docs/architecture/technology.md`, ADR `0001` |
+| UI / componente | `docs/standards/ui.md`, `patterns/ui/` |
+| Manifest | `docs/architecture/manifest-model.md`, `patterns/manifests/` |
+| Execução | `docs/architecture/execution-model.md`, `docs/standards/security.md` |
+| Código / crates | `docs/standards/code.md`, `docs/architecture/technology.md` |
+| `.github/` | `.cursor/rules/40-github.mdc` |
 
 ## Durante
 
