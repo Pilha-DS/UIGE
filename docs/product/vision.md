@@ -6,6 +6,8 @@ O UIGE fornece interfaces gráficas consistentes para ferramentas originalmente 
 
 Permitir que o usuário descubra, configure e execute ações de ferramentas sem precisar memorizar toda a sintaxe de linha de comando, preservando o poder e a flexibilidade da ferramenta original.
 
+A linha de comando não é uma segunda interface do produto: o binário aceita apenas um argumento para escolher o que a interface gráfica abre (a janela principal ou uma ferramenta específica). Ver [`../decisions/0002-abertura-da-interface-por-comando.md`](../decisions/0002-abertura-da-interface-por-comando.md).
+
 ## Filosofia
 
 - simples para executar;

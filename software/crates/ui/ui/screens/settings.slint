@@ -1,0 +1,207 @@
+import { ScrollView } from "std-widgets.slint";
+import { IconKind } from "../components/icons.slint";
+import { LightPrimaryButton, LightSecondaryButton, LightTextField } from "../components/light-controls.slint";
+import { PageBody } from "../components/page-body.slint";
+import { PageInfo } from "../components/pager.slint";
+import { SelectList } from "../components/select-list.slint";
+
+/// Configurações: área administrativa, separada do uso diário.
+///
+/// A curadoria de ferramentas (descoberta e importação de definições) vive aqui
+/// porque é operação de manutenção, não uma tarefa do dia a dia.
+export component SettingsScreen {
+    in-out property <string> workspace-name-text: "";
+    in property <bool> workspace-is-default: false;
+    in-out property <string> manifests-dir-text: "";
+    in property <[string]> candidates: [];
+    in-out property <int> selected-candidate: 0;
+    in property <PageInfo> candidate-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in property <string> candidate-detail-text: "";
+    in property <bool> busy: false;
+
+    callback rename-workspace-requested();
+    callback delete-workspace-requested();
+    callback discover-requested();
+    callback candidate-selection-changed();
+    callback candidate-page-requested(int);
+    callback import-requested();
+
+    // Preenche o pai: `100%` no elemento raiz resolveria contra a instância.
+    width: 100%;
+    height: 100%;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        PageBody {
+            ScrollView {
+                width: 100%;
+                height: 100%;
+
+                VerticalLayout {
+                    padding-top: 16px;
+                    padding-bottom: 16px;
+                    spacing: 8px;
+
+                    Text {
+                        text: "Configurações";
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    Text {
+                        text: "Workspace";
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    Text {
+                        text: "O workdir global é editado na barra no topo. Aqui ficam o nome e a remoção.";
+                        color: #9a9996;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+
+                    Text {
+                        text: "Nome";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightTextField {
+                            horizontal-stretch: 1;
+                            text <=> root.workspace-name-text;
+                            enabled: !root.busy;
+                        }
+
+                        LightSecondaryButton {
+                            text: "Renomear";
+                            enabled: !root.busy;
+                            clicked => {
+                                root.rename-workspace-requested();
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightSecondaryButton {
+                            text: "Remover workspace";
+                            // O padrão é protegido pelo core; a UI não oferece o que será recusado.
+                            enabled: !root.busy && !root.workspace-is-default;
+                            clicked => {
+                                root.delete-workspace-requested();
+                            }
+                        }
+
+                        if root.workspace-is-default: Text {
+                            text: "O workspace padrão não pode ser removido.";
+                            color: #9a9996;
+                            font-size: 12px;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Separador de 1px em tom claro: marca a troca de assunto sem caixa.
+                    Rectangle {
+                        height: 1px;
+                        background: #ecebe9;
+                    }
+
+                    Text {
+                        text: "Ferramentas (avançado)";
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    Text {
+                        text: "A descoberta não grava nada: apenas lista o que é definição válida. A importação registra a ferramenta e passa a exibi-la em Ferramentas.";
+                        color: #9a9996;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+
+                    Text {
+                        text: "Pasta de definições";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightTextField {
+                            horizontal-stretch: 1;
+                            text <=> root.manifests-dir-text;
+                            enabled: !root.busy;
+                            icon: IconKind.folder;
+                            placeholder: "Pasta com arquivos .json";
+                        }
+
+                        LightSecondaryButton {
+                            text: "Procurar";
+                            icon: IconKind.search;
+                            enabled: !root.busy;
+                            clicked => {
+                                root.discover-requested();
+                            }
+                        }
+                    }
+
+                    // Superfície do grupo: a lista se separa do fundo pelo tom.
+                    Rectangle {
+                        height: 124px;
+                        border-radius: 8px;
+                        background: #f7f6f5;
+                        clip: true;
+
+                        SelectList {
+                            items: root.candidates;
+                            selected-index <=> root.selected-candidate;
+                            page-info: root.candidate-page-info;
+                            enabled: !root.busy;
+                            empty-text: "Nenhum arquivo listado. Use “Procurar”.";
+                            selected => {
+                                root.candidate-selection-changed();
+                            }
+                            page-requested(page) => {
+                                root.candidate-page-requested(page);
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: root.candidate-detail-text;
+                        color: #5e5c64;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightPrimaryButton {
+                            text: "Importar selecionado";
+                            icon: IconKind.plus;
+                            enabled: !root.busy && root.candidates.length > 0;
+                            clicked => {
+                                root.import-requested();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

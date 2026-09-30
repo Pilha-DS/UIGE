@@ -1,0 +1,392 @@
+import { ScrollView } from "std-widgets.slint";
+import { Icon, IconKind } from "./icons.slint";
+
+/// Controles claros para uso dentro de modais e da barra de contexto.
+///
+/// Sem borda decorativa: cada controle é delimitado por uma **superfície** sutil
+/// mais uma sombra muito leve, conforme `docs/standards/ui.md`. A única borda que
+/// sobra é a de foco do campo de texto — sem ela não há como saber onde o texto
+/// entra.
+///
+/// Cores são explícitas de propósito: o painel do Modal é sempre claro, então
+/// controles que herdassem o tema escuro ficariam com texto ilegível.
+///
+/// Superfícies: `#f2f1ef` em repouso, `#e9e8e6` sob o ponteiro, `#dedcd9`
+/// pressionado.
+
+export component LightTextField {
+    in-out property <string> text <=> input.text;
+    in property <string> placeholder: "";
+    in property <bool> enabled: true;
+    in property <IconKind> icon: IconKind.none;
+    /// Emitido a cada edição, para quem precisa reagir enquanto a pessoa digita.
+    callback edited();
+
+    forward-focus: input;
+    min-height: 30px;
+    horizontal-stretch: 1;
+
+    Rectangle {
+        width: 100%;
+        height: 30px;
+        border-radius: 6px;
+        border-width: 1px;
+        border-color: input.has-focus ? #3584e4 : transparent;
+        background: input.has-focus ? #ffffff : #f2f1ef;
+        drop-shadow-blur: 5px;
+        drop-shadow-color: #0000000e;
+        drop-shadow-offset-y: 1px;
+
+        icon-slot := Rectangle {
+            x: 9px;
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+            background: transparent;
+            visible: root.icon != IconKind.none;
+
+            Icon {
+                size: 14px;
+                kind: root.icon;
+                color: #9a9996;
+            }
+        }
+
+        // Sempre presente: é ele quem recebe o clique de foco. Fora de foco fica
+        // coberto pelo texto elidido abaixo, e o conteúdo real não vaza.
+        input := TextInput {
+            x: text-offset;
+            width: parent.width - text-offset - 10px;
+            height: 100%;
+            enabled: root.enabled;
+            color: #1c1c1c;
+            font-size: 13px;
+            single-line: true;
+            vertical-alignment: center;
+            edited => { root.edited(); }
+        }
+
+        // Fora de foco (ou vazio): um `Text`, que sabe elidir. `TextInput` não
+        // elide, e um caminho longo estouraria a barra.
+        if !input.has-focus || input.text == "": Rectangle {
+            x: text-offset;
+            width: parent.width - text-offset - 10px;
+            height: 100%;
+            background: input.has-focus ? transparent : #f2f1ef;
+
+            Text {
+                width: 100%;
+                height: 100%;
+                text: root.text == "" ? root.placeholder : root.text;
+                color: root.text == "" ? #9a9996 : #1c1c1c;
+                font-size: 13px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+    }
+
+    // Deslocamento do conteúdo: cede 22px quando há ícone à esquerda.
+    property <length> text-offset: root.icon == IconKind.none ? 10px : 30px;
+}
+
+export component LightSecondaryButton {
+    in property <string> text: "";
+    in property <bool> enabled: true;
+    in property <IconKind> icon: IconKind.none;
+    /// Só o ícone, sem rótulo. Usado onde o texto não caberia.
+    in property <bool> icon-only: false;
+    /// Ocupa a largura do pai (menus e listas de ação). Sem isso o botão fica do
+    /// tamanho do próprio rótulo, que é o certo dentro de uma barra.
+    in property <bool> full-width: false;
+    callback clicked();
+
+    // Em `icon-only` a caixa é quadrada: o desenho tem 14px e, sem isto, o item
+    // de layout fica do tamanho do ícone — o botão encolhe e o alvo de clique
+    // deixa de ser o quadrado pretendido. O `min-width` precisa ficar na raiz:
+    // é a raiz que o layout pai dimensiona, e um `width` no `Rectangle` interno
+    // não propaga para o tamanho preferido da instância.
+    min-width: root.icon-only ? 30px : 0px;
+    min-height: 30px;
+    // Ocupar a largura vem do `stretch` do layout, não de `100%`: misturar
+    // percentual com comprimento fixo no mesmo `width` não é aceito.
+    horizontal-stretch: root.full-width ? 1 : 0;
+
+    Rectangle {
+        // Dimensionado pelo texto: um `min-width` fixo deixava todo botão do mesmo
+        // tamanho e transformava um rótulo curto em um bloco largo.
+        width: root.icon-only ? 30px : layout.preferred-width;
+        height: 30px;
+        border-radius: 6px;
+        background: touch.pressed
+            ? #dedcd9
+            : (touch.has-hover ? #e9e8e6 : #f2f1ef);
+        drop-shadow-blur: 5px;
+        drop-shadow-color: #0000000e;
+        drop-shadow-offset-y: 1px;
+
+        layout := HorizontalLayout {
+            // `100%` é o que centraliza o ícone no quadrado do modo `icon-only`:
+            // sem largura explícita o layout assume a largura do conteúdo e o
+            // ícone fica encostado à esquerda. Com rótulo é indiferente, porque
+            // o próprio layout define a largura do `Rectangle`.
+            width: 100%;
+            height: 100%;
+            padding-left: root.icon-only ? 0px : 12px;
+            padding-right: root.icon-only ? 0px : 12px;
+            spacing: 6px;
+            alignment: (root.icon-only || !root.full-width) ? center : start;
+
+            if root.icon != IconKind.none: Icon {
+                size: 14px;
+                kind: root.icon;
+                color: #5e5c64;
+            }
+
+            if !root.icon-only: Text {
+                text: root.text;
+                horizontal-stretch: root.full-width ? 1 : 0;
+                horizontal-alignment: root.full-width ? left : center;
+                vertical-alignment: center;
+                overflow: elide;
+                color: #1c1c1c;
+                font-size: 13px;
+                opacity: root.enabled ? 1.0 : 0.5;
+            }
+        }
+
+        touch := TouchArea {
+            enabled: root.enabled;
+            clicked => { root.clicked(); }
+        }
+    }
+}
+
+export component LightPrimaryButton {
+    in property <string> text: "";
+    in property <bool> enabled: true;
+    in property <IconKind> icon: IconKind.none;
+    callback clicked();
+
+    min-height: 30px;
+
+    Rectangle {
+        width: layout.preferred-width;
+        height: 30px;
+        border-radius: 6px;
+        background: touch.pressed ? #1c71d8 : (touch.has-hover ? #2b74d0 : #3584e4);
+        drop-shadow-blur: 8px;
+        drop-shadow-color: #3584e440;
+        drop-shadow-offset-y: 2px;
+
+        layout := HorizontalLayout {
+            padding-left: 14px;
+            padding-right: 14px;
+            spacing: 6px;
+            alignment: center;
+
+            if root.icon != IconKind.none: Icon {
+                size: 14px;
+                kind: root.icon;
+                color: #ffffff;
+            }
+
+            Text {
+                text: root.text;
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 600;
+                vertical-alignment: center;
+                opacity: root.enabled ? 1.0 : 0.5;
+            }
+        }
+
+        touch := TouchArea {
+            enabled: root.enabled;
+            clicked => { root.clicked(); }
+        }
+    }
+}
+
+/// Botão de alternância clara. `checked` indica o estado selecionado.
+///
+/// Usado para escolhas mutuamente exclusivas com dois estados visíveis ao mesmo
+/// tempo (ex.: filtro Do workspace / Todas), onde um ComboBox esconderia a
+/// alternativa.
+export component LightToggleButton {
+    in property <string> text: "";
+    in property <bool> checked: false;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-height: 30px;
+    horizontal-stretch: 1;
+
+    Rectangle {
+        width: 100%;
+        height: 30px;
+        border-radius: 6px;
+        background: root.checked
+            ? (touch.pressed ? #1c71d8 : #3584e4)
+            : (touch.has-hover ? #e9e8e6 : #f2f1ef);
+
+        Text {
+            width: 100%;
+            height: 100%;
+            text: root.text;
+            color: root.checked ? #ffffff : #5e5c64;
+            font-size: 13px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            opacity: root.enabled ? 1.0 : 0.5;
+        }
+
+        touch := TouchArea {
+            enabled: root.enabled;
+            clicked => { root.clicked(); }
+        }
+    }
+}
+
+/// Seletor de valor único: mostra o valor atual e abre a lista dos demais.
+///
+/// Existe no lugar do `ComboBox` de `std-widgets` onde o controle divide a barra
+/// com os controles claros. O widget padrão traz fundo branco e borda próprios,
+/// que **não** seguem a superfície do UIGE (`docs/standards/ui.md`) — numa barra
+/// de `#f7f6f5` ele vira uma laje clara do tamanho da barra. Aqui a superfície é a
+/// mesma dos outros controles: `#f2f1ef`, raio 6, sombra leve, sem borda.
+///
+/// A largura não é decidida aqui: quem usa define, para a barra não mexer quando o
+/// valor muda de tamanho.
+export component LightSelect {
+    in property <[string]> model: [];
+    in-out property <int> current-index: 0;
+    in property <bool> enabled: true;
+    /// Mostrado quando não há valor selecionado.
+    in property <string> placeholder: "";
+    /// Emitido quando a escolha muda, já com `current-index` atualizado.
+    callback selected(int);
+
+    min-height: 30px;
+
+    Rectangle {
+        width: 100%;
+        height: 30px;
+        border-radius: 6px;
+        background: touch.pressed
+            ? #dedcd9
+            : (touch.has-hover || popup.is-open ? #e9e8e6 : #f2f1ef);
+        drop-shadow-blur: 5px;
+        drop-shadow-color: #0000000e;
+        drop-shadow-offset-y: 1px;
+
+        HorizontalLayout {
+            width: 100%;
+            height: 100%;
+            padding-left: 12px;
+            padding-right: 9px;
+            spacing: 6px;
+
+            Text {
+                horizontal-stretch: 1;
+                text: root.has-value ? root.model[root.current-index] : root.placeholder;
+                color: root.has-value ? #1c1c1c : #9a9996;
+                font-size: 13px;
+                vertical-alignment: center;
+                overflow: elide;
+                opacity: root.enabled ? 1.0 : 0.5;
+            }
+
+            Icon {
+                size: 12px;
+                kind: IconKind.chevron;
+                color: #5e5c64;
+            }
+        }
+
+        touch := TouchArea {
+            enabled: root.enabled;
+            clicked => {
+                if popup.is-open {
+                    popup.close();
+                } else {
+                    popup.show();
+                }
+            }
+        }
+    }
+
+    property <bool> has-value: root.current-index >= 0 && root.current-index < root.model.length;
+
+    // A lista é uma janela própria, ancorada logo abaixo do controle. O `PopupWindow`
+    // não deixa ler o tamanho do conteúdo de fora, então a altura vem do modelo —
+    // mesmo caminho do `ComboBox` de `std-widgets`.
+    popup := PopupWindow {
+        x: 0;
+        y: root.height + 4px;
+        width: root.width;
+        height: min(root.model.length * 30px + 8px, 248px);
+        close-policy: close-on-click-outside;
+
+        Rectangle {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            background: #ffffff;
+            drop-shadow-blur: 16px;
+            drop-shadow-color: #00000026;
+            drop-shadow-offset-y: 4px;
+
+            if root.model.length == 0: Text {
+                x: 10px;
+                width: parent.width - 20px;
+                height: 100%;
+                text: "Sem opções.";
+                color: #9a9996;
+                font-size: 13px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+
+            if root.model.length > 0: ScrollView {
+                width: 100%;
+                height: 100%;
+
+                VerticalLayout {
+                    padding: 4px;
+                    spacing: 2px;
+
+                    for value[index] in root.model: Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: index == root.current-index
+                            ? #e0ebfa
+                            : (item-hover.has-hover ? #f2f1ef : transparent);
+
+                        Text {
+                            x: 10px;
+                            width: parent.width - 20px;
+                            height: 100%;
+                            text: value;
+                            color: index == root.current-index ? #1c71d8 : #1c1c1c;
+                            font-weight: index == root.current-index ? 600 : 400;
+                            font-size: 13px;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+
+                        item-hover := TouchArea {
+                            width: 100%;
+                            height: 100%;
+                            clicked => {
+                                root.current-index = index;
+                                root.selected(index);
+                                popup.close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

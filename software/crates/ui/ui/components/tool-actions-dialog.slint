@@ -1,0 +1,85 @@
+import { Modal } from "./modal.slint";
+import { LightSecondaryButton } from "./light-controls.slint";
+import { IconKind } from "./icons.slint";
+
+/// Ações administrativas de uma ferramenta (o ⋮ da lista).
+///
+/// Só lista o que existe hoje. Itens previstos na spec mas ainda não
+/// implementados (editar definição, versões, criar atalho, remover) ficam de
+/// fora em vez de aparecer desabilitados — menu cheio de item inerte não informa.
+///
+/// É um menu, não um formulário: painel estreito, itens empilhados com ícone e
+/// sem botão de fechar no rodapé — o X do cabeçalho já fecha.
+export component ToolActionsDialog {
+    in-out property <bool> open: false;
+    in property <bool> busy: false;
+
+    in property <string> tool-name: "";
+    in property <bool> is-favorite: false;
+    in property <bool> in-workspace: false;
+
+    callback toggle-favorite-requested();
+    callback toggle-workspace-requested();
+    callback create-profile-requested();
+    callback close-requested();
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        width: 100%;
+        height: 100%;
+        open: root.open;
+        busy: root.busy;
+        title: root.tool-name;
+        panel-width: 300px;
+        close-requested => {
+            root.close-requested();
+        }
+
+        VerticalLayout {
+            spacing: 4px;
+
+            LightSecondaryButton {
+                full-width: true;
+                text: root.is-favorite ? "Remover dos favoritos" : "Marcar como favorita";
+                icon: root.is-favorite ? IconKind.star : IconKind.star-outline;
+                enabled: !root.busy;
+                clicked => {
+                    root.toggle-favorite-requested();
+                }
+            }
+
+            LightSecondaryButton {
+                full-width: true;
+                text: root.in-workspace
+                    ? "Remover do workspace"
+                    : "Adicionar ao workspace";
+                icon: root.in-workspace ? IconKind.check : IconKind.plus;
+                enabled: !root.busy;
+                clicked => {
+                    root.toggle-workspace-requested();
+                }
+            }
+
+            LightSecondaryButton {
+                full-width: true;
+                text: "Criar perfil com esta ferramenta";
+                icon: IconKind.profiles;
+                enabled: !root.busy;
+                clicked => {
+                    root.create-profile-requested();
+                }
+            }
+
+            Text {
+                text: root.in-workspace
+                    ? "Esta ferramenta faz parte do workspace ativo."
+                    : "Esta ferramenta não faz parte do workspace ativo.";
+                color: #9a9996;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+    }
+}

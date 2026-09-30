@@ -1,0 +1,98 @@
+import { ScrollView } from "std-widgets.slint";
+import { PageInfo, Pager } from "./pager.slint";
+
+/// Lista de seleção única, com scroll, paginação e estado vazio.
+///
+/// Existe para as telas não repetirem o mesmo desenho de linha selecionável.
+/// Só informa qual índice foi escolhido; o significado do índice é da tela.
+///
+/// `items` é **a página exibida**, não a lista inteira: a UI não consegue fatiar um
+/// modelo, então o recorte vem pronto do app. Já o índice informado e recebido é a
+/// posição na **lista inteira** — a lista soma `page-info.offset` para traduzir.
+/// Assim quem consome a seleção não precisa saber que a lista é paginada.
+export component SelectList {
+    in property <[string]> items: [];
+    in-out property <int> selected-index: 0;
+    in property <bool> enabled: true;
+    in property <string> empty-text: "";
+    /// Sem paginação o padrão basta: uma página com o que foi dado.
+    in property <PageInfo> page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    /// Itens por página, só para o rótulo da faixa exibida.
+    in property <int> page-size: 10;
+
+    callback selected();
+    callback page-requested(int);
+
+    // Preenche a caixa onde a lista é colocada: `100%` no elemento raiz
+    // resolveria contra a própria instância, e a lista sumiria.
+    width: 100%;
+    height: 100%;
+
+    // Posição do primeiro item da página na lista inteira.
+    property <int> index-offset: root.page-info.offset;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+
+        if root.items.length == 0: Text {
+            text: root.empty-text;
+            color: #9a9996;
+            font-size: 13px;
+            wrap: word-wrap;
+        }
+
+        if root.items.length > 0: VerticalLayout {
+            width: 100%;
+            height: 100%;
+            // Espaço só entre lista e paginador; sem paginador, nada aparece.
+            spacing: 6px;
+
+            ScrollView {
+                width: 100%;
+                vertical-stretch: 1;
+
+                VerticalLayout {
+                    padding: 4px;
+                    spacing: 2px;
+
+                    for item[idx] in root.items: Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: idx + root.index-offset == root.selected-index ? #d7e6f8 : transparent;
+
+                        TouchArea {
+                            enabled: root.enabled;
+                            clicked => {
+                                root.selected-index = idx + root.index-offset;
+                                root.selected();
+                            }
+                        }
+
+                        Text {
+                            x: 10px;
+                            width: parent.width - 20px;
+                            height: 100%;
+                            text: item;
+                            vertical-alignment: center;
+                            font-size: 13px;
+                            color: #1c1c1c;
+                        }
+                    }
+                }
+            }
+
+            // `if` e não `visible`: em Slint um item invisível ainda ocupa lugar, e
+            // o paginador de uma lista de página única reservaria altura sem ter o
+            // que mostrar.
+            if root.page-info.page-count > 1: Pager {
+                info: root.page-info;
+                page-size: root.page-size;
+                enabled: root.enabled;
+                previous-requested => { root.page-requested(root.page-info.page - 1); }
+                next-requested => { root.page-requested(root.page-info.page + 1); }
+            }
+        }
+    }
+}

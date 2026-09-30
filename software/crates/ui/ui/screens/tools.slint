@@ -1,0 +1,120 @@
+import { IconKind } from "../components/icons.slint";
+import { LightTextField, LightToggleButton } from "../components/light-controls.slint";
+import { PageBody } from "../components/page-body.slint";
+import { PageInfo } from "../components/pager.slint";
+import { ToolList } from "../components/tool-list.slint";
+
+/// Ferramentas: lista com busca, filtro e as ações de cada linha.
+///
+/// A execução não acontece aqui. O ▶ abre um modal de execução simples e o 📁
+/// abre a tela da ferramenta (ferramenta + Workdir). Manter a lista só como
+/// índice evita repetir o painel de execução na lateral.
+export component ToolsScreen {
+    in property <[string]> tool-names: [];
+    in-out property <string> search-text: "";
+    /// `true` = só ferramentas do Workspace ativo; `false` = todas as disponíveis.
+    in-out property <bool> workspace-only: true;
+    in property <PageInfo> page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in property <bool> busy: false;
+
+    callback run-requested(int);
+    callback open-requested(int);
+    callback actions-requested(int);
+    callback filter-changed();
+    callback page-requested(int);
+
+    // Preenche o pai: `100%` no elemento raiz resolveria contra a instância.
+    width: 100%;
+    height: 100%;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        PageBody {
+            VerticalLayout {
+                padding-top: 16px;
+                padding-bottom: 16px;
+                spacing: 8px;
+
+                Text {
+                    text: "Ferramentas";
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1c1c1c;
+                }
+
+                Text {
+                    text: "Executar roda direto no Workdir global. Abrir leva a ferramenta para um diretório próprio.";
+                    color: #9a9996;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    LightTextField {
+                        horizontal-stretch: 1;
+                        text <=> root.search-text;
+                        enabled: !root.busy;
+                        icon: IconKind.search;
+                        placeholder: "Buscar ferramenta";
+                        edited => {
+                            root.filter-changed();
+                        }
+                    }
+
+                    LightToggleButton {
+                        text: "Do workspace";
+                        checked: root.workspace-only;
+                        enabled: !root.busy;
+                        clicked => {
+                            root.workspace-only = true;
+                            root.filter-changed();
+                        }
+                    }
+
+                    LightToggleButton {
+                        text: "Todas";
+                        checked: !root.workspace-only;
+                        enabled: !root.busy;
+                        clicked => {
+                            root.workspace-only = false;
+                            root.filter-changed();
+                        }
+                    }
+                }
+
+                // Sem caixa: as linhas vivem na página e se separam pelo realce.
+                Rectangle {
+                    vertical-stretch: 1;
+                    background: transparent;
+                    clip: true;
+
+                    ToolList {
+                        items: root.tool-names;
+                        page-info: root.page-info;
+                        enabled: !root.busy;
+                        empty-text: root.workspace-only
+                            ? "Nenhuma ferramenta neste workspace."
+                            : "Nenhuma ferramenta encontrada.";
+                        run-requested(idx) => {
+                            root.run-requested(idx);
+                        }
+                        open-requested(idx) => {
+                            root.open-requested(idx);
+                        }
+                        actions-requested(idx) => {
+                            root.actions-requested(idx);
+                        }
+                        page-requested(page) => {
+                            root.page-requested(page);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

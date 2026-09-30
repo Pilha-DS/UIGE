@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "v1",
+  "id": "echo",
+  "name": "Echo",
+  "description": "Ferramenta de demonstração que imprime texto no stdout (Windows via cmd).",
+  "executable": "cmd",
+  "commands": [
+    {
+      "id": "print",
+      "name": "Imprimir",
+      "description": "Imprime a mensagem informada.",
+      "argvPrefix": ["/C", "echo"],
+      "parameters": [
+        {
+          "id": "message",
+          "name": "Mensagem",
+          "type": "string",
+          "required": true,
+          "default": "hello UIGE"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+import { ScrollView } from "std-widgets.slint";
+import { IconKind } from "../components/icons.slint";
+import { LightPrimaryButton, LightSecondaryButton, LightTextField } from "../components/light-controls.slint";
+import { PageBody } from "../components/page-body.slint";
+
+/// Criação de Workflow — sub-nível de Workflows, não um diálogo.
+///
+/// É tela e não modal porque a criação se compõe de outra coisa que já é modal:
+/// detalhar uma etapa (`WorkflowStepDialog`). Um modal sobre outro empilha dois
+/// fundos escurecidos e dois botões de fechar, e não há como saber qual `Esc`
+/// fecha. Com a criação em tela, a pilha é sempre tela → modal.
+///
+/// A tela concentra o nome, a sequência de etapas e o salvar. As etapas entram
+/// **uma por vez**, detalhadas no modal; a lista abaixo mostra o que já foi
+/// montado, para conferir a ordem antes de salvar.
+export component WorkflowCreateScreen {
+    in property <bool> busy: false;
+
+    in-out property <string> name-text: "";
+    in-out property <string> step-error-text: "";
+    in-out property <string> error-text: "";
+
+    in property <[string]> step-labels: [];
+
+    callback back-requested();
+    callback open-step-requested();
+    callback remove-step-requested();
+    callback confirm-requested();
+
+    // Preenche a área da seção: `100%` no elemento raiz resolveria contra a instância.
+    width: 100%;
+    height: 100%;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        PageBody {
+            // A tela cresce com a lista de etapas; o scroll mantém o fim
+            // alcançável em janelas baixas em vez de cortar o rodapé.
+            ScrollView {
+                width: 100%;
+                height: 100%;
+
+                VerticalLayout {
+                    padding-top: 16px;
+                    padding-bottom: 16px;
+                    spacing: 8px;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        LightSecondaryButton {
+                            text: "Workflows";
+                            icon: IconKind.back;
+                            enabled: !root.busy;
+                            clicked => {
+                                root.back-requested();
+                            }
+                        }
+
+                        Text {
+                            text: "Novo workflow";
+                            font-size: 18px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                            color: #1c1c1c;
+                        }
+                    }
+
+                    Text {
+                        text: "Um workflow executa várias etapas em sequência, cada uma com sua própria ferramenta e ação.";
+                        wrap: word-wrap;
+                        color: #9a9996;
+                        font-size: 12px;
+                    }
+
+                    Text {
+                        text: "Nome do workflow";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    LightTextField {
+                        text <=> root.name-text;
+                        enabled: !root.busy;
+                        placeholder: "Ex.: Preparar repositório";
+                    }
+
+                    // Separador de 1px em tom bem claro: separa as duas partes do
+                    // formulário sem virar caixa.
+                    Rectangle {
+                        height: 1px;
+                        background: #ecebe9;
+                    }
+
+                    Text {
+                        text: "Etapas";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightSecondaryButton {
+                            text: "Adicionar etapa";
+                            icon: IconKind.plus;
+                            enabled: !root.busy;
+                            clicked => {
+                                root.open-step-requested();
+                            }
+                        }
+
+                        LightSecondaryButton {
+                            text: "Remover última etapa";
+                            icon: IconKind.minus;
+                            enabled: !root.busy && root.step-labels.length > 0;
+                            clicked => {
+                                root.remove-step-requested();
+                            }
+                        }
+                    }
+
+                    if root.step-error-text != "": Text {
+                        text: root.step-error-text;
+                        wrap: word-wrap;
+                        color: #c01c28;
+                        font-size: 12px;
+                    }
+
+                    // Superfície do grupo: as etapas montadas ficam num bloco próprio.
+                    Rectangle {
+                        height: 132px;
+                        border-radius: 8px;
+                        background: #f7f6f5;
+                        clip: true;
+
+                        ScrollView {
+                            width: 100%;
+                            height: 100%;
+
+                            VerticalLayout {
+                                padding: 8px;
+                                spacing: 4px;
+
+                                if root.step-labels.length == 0: Text {
+                                    text: "Nenhuma etapa ainda. Comece por Adicionar etapa.";
+                                    color: #9a9996;
+                                    font-size: 12px;
+                                }
+
+                                for label in root.step-labels: Text {
+                                    text: label;
+                                    wrap: word-wrap;
+                                    color: #1c1c1c;
+                                    font-size: 13px;
+                                }
+                            }
+                        }
+                    }
+
+                    if root.error-text != "": Text {
+                        text: root.error-text;
+                        wrap: word-wrap;
+                        color: #c01c28;
+                        font-size: 12px;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightSecondaryButton {
+                            text: "Cancelar";
+                            enabled: !root.busy;
+                            clicked => {
+                                root.back-requested();
+                            }
+                        }
+
+                        LightPrimaryButton {
+                            text: root.busy ? "Salvando…" : "Salvar workflow";
+                            icon: IconKind.check;
+                            enabled: !root.busy;
+                            clicked => {
+                                root.confirm-requested();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

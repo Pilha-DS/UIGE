@@ -13,15 +13,28 @@ Fonte canônica da stack adotada. A decisão e o histórico estão em [`../decis
 | Manifests / configuração | Serde + JSON | Serialização e formatos versionáveis |
 | Design | GNOME HIG (inspiração) | Clareza, densidade moderada, ações destrutivas explícitas |
 
+## Interfaces
+
+O UIGE é um produto de **interface gráfica**. O binário `uige` aceita um argumento posicional opcional que escolhe o que a interface abre:
+
+| Invocação | Comportamento |
+|---|---|
+| `uige` | abre a interface principal |
+| `uige <id>` | abre a interface já focada na ferramenta `<id>` |
+
+O argumento apenas define o estado inicial; não existe modo headless e nenhuma ferramenta é executada sem a GUI. A ferramenta é identificada pelo `id` do Manifest. Argumentos iniciados por `-` são reservados para flags; um `id` desconhecido abre a interface principal e informa o usuário. Decisão e consequências: [`../decisions/0002-abertura-da-interface-por-comando.md`](../decisions/0002-abertura-da-interface-por-comando.md).
+
+Sem servidor gráfico o produto não é utilizável; nesse caso a falha deve ser explícita, não um travamento.
+
 ## Camadas
 
 ### Core (Rust)
 
-Concentra regras de domínio, validação de manifests, montagem de execução e acesso a dados. Não deve depender de widgets ou detalhes de layout da UI.
+Concentra regras de domínio, validação de manifests, montagem de execução, casos de uso e acesso a dados. Não deve depender de widgets ou detalhes de layout da UI.
 
 ### UI (Slint)
 
-Camada de apresentação. Consome o core; não deve duplicar regras de negócio nem montar comandos de shell por conta própria.
+Camada de apresentação. Consome o core; não deve duplicar regras de negócio nem montar comandos de shell por conta própria. É a única camada de apresentação do produto.
 
 ### Async e processos (Tokio)
 
@@ -51,8 +64,11 @@ No Linux, atalhos externos podem usar arquivos `.desktop`, alinhados ao modelo d
 
 Suporte a outros sistemas operacionais exige decisão explícita (novo ADR ou atualização deste documento via ADR).
 
+## Código da aplicação
+
+O código vive em [`../../software/`](../../software/). Workspace Cargo com crates `uige-core`, `uige-ui` e binário `uige`. Detalhes de build em `software/README.md`.
+
 ## Fora do escopo atual
 
-- scaffold de aplicação ou `Cargo.toml`;
 - escolha de crates secundárias sem necessidade concreta;
 - suporte documentado a Windows ou macOS.

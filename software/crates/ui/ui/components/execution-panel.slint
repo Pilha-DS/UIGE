@@ -1,0 +1,129 @@
+import { ScrollView } from "std-widgets.slint";
+import { IconKind } from "./icons.slint";
+import { LightPrimaryButton, LightTextField } from "./light-controls.slint";
+import { SelectList } from "./select-list.slint";
+
+/// Painel de execução: escolher a ação, informar parâmetro, executar e ver o resultado.
+///
+/// O resultado fica aqui, junto da ação — não no fim de uma página longa.
+/// O Workdir não é editado aqui: ele vem da barra de contexto e é exibido para
+/// deixar claro com que diretório a execução vai rodar.
+export component ExecutionPanel {
+    in property <[string]> command-names: [];
+    in-out property <int> selected-command: 0;
+    in property <bool> show-param: false;
+    in property <string> param-label: "Parâmetro";
+    in-out property <string> param-text: "";
+    in property <string> workdir-text: "";
+    in property <bool> busy: false;
+    in property <string> execution-status: "-";
+    in property <string> execution-exit-code: "-";
+    in property <string> execution-output: "";
+
+    callback selection-changed();
+    callback run-requested();
+
+    VerticalLayout {
+        spacing: 8px;
+
+        Text {
+            text: "Ação";
+            font-size: 12px;
+            font-weight: 600;
+            color: #5e5c64;
+        }
+
+        // Superfície do grupo, não caixa com borda: a separação vem do tom.
+        Rectangle {
+            height: 100px;
+            border-radius: 8px;
+            background: #f7f6f5;
+            clip: true;
+
+            SelectList {
+                items: root.command-names;
+                selected-index <=> root.selected-command;
+                enabled: !root.busy;
+                empty-text: "Nenhuma ação disponível.";
+                selected => {
+                    root.selection-changed();
+                }
+            }
+        }
+
+        if root.show-param: VerticalLayout {
+            spacing: 6px;
+
+            Text {
+                text: root.param-label;
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            LightTextField {
+                text <=> root.param-text;
+                enabled: !root.busy;
+            }
+        }
+
+        Text {
+            text: "Workdir: " + (root.workdir-text == "" ? "(não definido)" : root.workdir-text);
+            color: #9a9996;
+            font-size: 12px;
+            wrap: word-wrap;
+        }
+
+        HorizontalLayout {
+            alignment: start;
+
+            LightPrimaryButton {
+                text: root.busy ? "Executando…" : "Executar";
+                icon: IconKind.play;
+                enabled: !root.busy && root.command-names.length > 0;
+                clicked => {
+                    root.run-requested();
+                }
+            }
+        }
+
+        Text {
+            text: "Status: " + root.execution-status + "    Exit code: " + root.execution-exit-code;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1c1c1c;
+        }
+
+        Text {
+            text: "Output (últimas 5 linhas)";
+            font-size: 12px;
+            font-weight: 600;
+            color: #5e5c64;
+        }
+
+        Rectangle {
+            height: 110px;
+            border-radius: 8px;
+            background: #242424;
+            drop-shadow-blur: 10px;
+            drop-shadow-color: #0000001a;
+            drop-shadow-offset-y: 2px;
+
+            ScrollView {
+                width: 100%;
+                height: 100%;
+
+                Text {
+                    width: parent.width - 16px;
+                    x: 8px;
+                    y: 6px;
+                    text: root.execution-output;
+                    wrap: word-wrap;
+                    color: #f6f5f4;
+                    font-family: "Consolas";
+                    font-size: 12px;
+                }
+            }
+        }
+    }
+}

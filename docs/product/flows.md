@@ -1,24 +1,34 @@
 # Fluxos de usuário
 
+Fluxos do ponto de vista do usuário. As telas citadas estão definidas em [`interface.md`](interface.md).
+
+O Workspace e o Workdir global são **contexto** (barra de contexto), não uma etapa: aparecem em todos os fluxos e podem ser trocados a qualquer momento.
+
 ## Executar rapidamente
 
-`Workspace → Home → Ferramenta → Ação → Parâmetros → Executar`
+`Home (favorito) ou Ferramentas → Ferramenta → Ação → Parâmetros → Executar`
+
+O resultado aparece no painel de execução da própria tela.
 
 ## Abrir ferramenta em outro diretório
 
-`Workspace → Home → Ferramenta → Escolher diretório → Tela da ferramenta`
+`Ferramentas → Ferramenta → Alterar workdir → Ação → Executar`
 
 ## Executar Perfil
 
-`Workspace → Perfil → Abrir/Confirmar/Executar`
+`Perfis → Perfil → Abrir/Confirmar/Executar`
 
 ## Criar Perfil
 
-`Home/Ferramenta → Criar perfil → Tipo → Configuração → Workspaces → Salvar`
+`Ferramenta → Criar perfil → Tipo → Configuração → Workspaces → Salvar`
+
+## Criar Workflow
+
+`Workflows → Criar workflow → Etapas → Salvar → Executar`
 
 ## Criar ferramenta
 
-`Nova ferramenta → Manual/Detectar/Importar → Revisar → Salvar`
+`Configurações → Ferramentas → Descobrir/Importar → Revisar → Salvar`
 
 ## Criar atalho
 
