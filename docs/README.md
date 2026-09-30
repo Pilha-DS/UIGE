@@ -15,6 +15,7 @@ Esta pasta contém a documentação canônica do projeto. Cada assunto possui um
 | Documento antigo / referência histórica | `reference/` |
 | Exemplos concretos e modelos canônicos | `/patterns/` |
 | Histórico incremental de alterações | `/changes/` |
+| Código da aplicação (Rust + Slint) | `/software/` |
 
 ## Regra de separação
 
@@ -33,11 +34,12 @@ Se um texto responde a várias perguntas, ele deve ser dividido e conectado por 
 
 1. `product/vision.md`
 2. `product/features.md`
-3. `domain/glossary.md`
-4. `architecture/overview.md`
-5. `architecture/technology.md`
-6. `standards/README.md`
-7. `ai/README.md`
+3. `product/implementation-order.md`
+4. `domain/glossary.md`
+5. `architecture/overview.md`
+6. `architecture/technology.md`
+7. `standards/README.md`
+8. `ai/README.md`
 
 ## Documento anterior
 

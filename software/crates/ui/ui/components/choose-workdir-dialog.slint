@@ -1,0 +1,123 @@
+import { IconKind } from "./icons.slint";
+import { LightPrimaryButton, LightSecondaryButton, LightTextField } from "./light-controls.slint";
+import { Modal } from "./modal.slint";
+import { SelectList } from "./select-list.slint";
+
+/// Seleção de Workdir: navegar por pastas em vez de digitar o caminho.
+///
+/// Serve a dois destinos — o **Workdir global** do Workspace e o **Workdir de uma
+/// ferramenta** —, e o diálogo é o mesmo: o que muda é para onde o valor vai, e
+/// isso quem sabe é o app. Título e frase de apoio vêm de fora justamente para
+/// que o mesmo seletor não apareça com dois nomes fixos.
+///
+/// O campo mostra sempre o diretório atual e pode ser editado para ir direto a um
+/// caminho conhecido ("Ir"). A lista traz `..` na primeira posição quando existe
+/// pasta acima, então descer e subir usam a mesma ação.
+///
+/// O botão final aplica o que está no campo, não a última pasta visitada — quem
+/// digita um caminho e confirma não deveria precisar clicar em "Ir" antes.
+export component ChooseWorkdirDialog {
+    in-out property <bool> open: false;
+    in property <bool> busy: false;
+
+    in property <string> title: "Workdir global";
+    in property <string> hint: "Pasta onde as execuções simples deste workspace vão rodar.";
+
+    in-out property <string> path-text: "";
+    in property <[string]> entries: [];
+    in-out property <int> selected-entry: -1;
+    in property <string> error-text: "";
+
+    callback close-requested();
+    callback entry-selected(int);
+    callback go-requested();
+    callback apply-requested();
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        open: root.open;
+        title: root.title;
+        panel-width: 440px;
+        busy: root.busy;
+        close-requested => {
+            root.close-requested();
+        }
+
+        Text {
+            text: root.hint;
+            color: #9a9996;
+            font-size: 12px;
+            wrap: word-wrap;
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+
+            LightTextField {
+                horizontal-stretch: 1;
+                text <=> root.path-text;
+                enabled: !root.busy;
+                icon: IconKind.folder;
+                placeholder: "Caminho do diretório";
+            }
+
+            LightSecondaryButton {
+                text: "Ir";
+                icon: IconKind.back;
+                enabled: !root.busy;
+                clicked => {
+                    root.go-requested();
+                }
+            }
+        }
+
+        // Superfície do grupo: a lista se separa do fundo pelo tom.
+        Rectangle {
+            height: 216px;
+            border-radius: 8px;
+            background: #f7f6f5;
+            clip: true;
+
+            SelectList {
+                items: root.entries;
+                selected-index <=> root.selected-entry;
+                enabled: !root.busy;
+                empty-text: "Nenhuma subpasta aqui. Use o campo acima para ir a outro caminho.";
+                selected => {
+                    root.entry-selected(root.selected-entry);
+                }
+            }
+        }
+
+        if root.error-text != "": Text {
+            text: root.error-text;
+            color: #c01c28;
+            font-size: 12px;
+            wrap: word-wrap;
+        }
+
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+
+            LightSecondaryButton {
+                text: "Cancelar";
+                enabled: !root.busy;
+                clicked => {
+                    root.close-requested();
+                }
+            }
+
+            LightPrimaryButton {
+                text: "Usar esta pasta";
+                icon: IconKind.check;
+                enabled: !root.busy;
+                clicked => {
+                    root.apply-requested();
+                }
+            }
+        }
+    }
+}

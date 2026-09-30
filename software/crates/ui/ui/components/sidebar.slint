@@ -1,0 +1,84 @@
+import { Icon, IconKind } from "./icons.slint";
+
+/// Sidebar de navegação por seções.
+///
+/// Só desenha a lista. Qual seção está ativa é estado do AppWindow, ligado por
+/// vínculo de duas vias em `current-index` — a sidebar não decide navegação.
+///
+/// Dois modos: com rótulo (janela larga) e só ícone — o "trilho" — quando a
+/// janela é estreita. O modo vem de `compact`, decidido pelo AppWindow a partir
+/// da largura, para a navegação nunca sumir nem empurrar o conteúdo.
+export component Sidebar {
+    in property <[string]> items: [];
+    in property <[IconKind]> icons: [];
+    in-out property <int> current-index: 0;
+    /// `true` = só ícones. Devolve largura ao conteúdo em janela estreita.
+    in property <bool> compact: false;
+
+    width: root.compact ? 52px : 168px;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #f7f6f5;
+
+        VerticalLayout {
+            padding: root.compact ? 6px : 10px;
+            spacing: 2px;
+
+            for item[idx] in root.items: Rectangle {
+                height: 30px;
+                border-radius: 6px;
+                background: idx == root.current-index
+                    ? #e0ebfa
+                    : (nav-hover.has-hover ? #eceae8 : transparent);
+
+                // Marca da seção ativa. Responde "onde eu estou" mesmo quando o
+                // rótulo não cabe.
+                if idx == root.current-index: Rectangle {
+                    x: 0;
+                    y: (parent.height - self.height) / 2;
+                    width: 3px;
+                    height: 16px;
+                    border-radius: 2px;
+                    background: #3584e4;
+                }
+
+                // Antes do conteúdo: o Text não captura ponteiro, e o clique
+                // precisa chegar aqui.
+                nav-hover := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    clicked => {
+                        root.current-index = idx;
+                    }
+                }
+
+                HorizontalLayout {
+                    width: 100%;
+                    height: 100%;
+                    padding-left: root.compact ? 0px : 10px;
+                    padding-right: root.compact ? 0px : 8px;
+                    spacing: 8px;
+                    alignment: root.compact ? center : start;
+
+                    Icon {
+                        size: 15px;
+                        kind: root.icons.length > idx ? root.icons[idx] : IconKind.none;
+                        color: idx == root.current-index ? #1c71d8 : #5e5c64;
+                    }
+
+                    if !root.compact: Text {
+                        text: item;
+                        horizontal-stretch: 1;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        font-size: 13px;
+                        font-weight: idx == root.current-index ? 600 : 400;
+                        color: idx == root.current-index ? #1c71d8 : #1c1c1c;
+                    }
+                }
+            }
+        }
+    }
+}

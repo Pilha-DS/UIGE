@@ -1,0 +1,249 @@
+/// Ícones do UIGE, desenhados como `Path`.
+///
+/// Motivo de não usar glifo de fonte nem imagem:
+///
+/// - glifo de fonte muda de forma e de métrica entre sistemas;
+/// - emoji traz cor própria e brigaria com o tema claro fixo;
+/// - `Path` mantém o traço monocromático, com cor vinda de `color`, e escala sem
+///   asset externo.
+///
+/// Convenções: grade de 16x16, traço de 1.5px, contorno quando o ícone representa
+/// uma ação e preenchimento quando representa estado (favorito, menu).
+/// O consumidor escolhe `width`/`height` e `color`.
+
+/// Catálogo de ícones usado nos controles (botões, navegação, listas).
+///
+/// Existe para um controle aceitar "que ícone" sem precisar de `@children`: o
+/// valor viaja como propriedade e o desenho fica em `Icon`.
+export enum IconKind {
+    none,
+    play,
+    folder,
+    save,
+    plus,
+    minus,
+    search,
+    close,
+    dots,
+    star,
+    star-outline,
+    home,
+    tools,
+    profiles,
+    workflows,
+    settings,
+    back,
+    check,
+    chevron,
+}
+
+component IconPath {
+    in property <brush> color: #1c1c1c;
+    in property <length> thickness: 1.5px;
+    in property <string> commands: "";
+    in property <bool> filled: false;
+
+    width: 16px;
+    height: 16px;
+
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 16;
+        viewbox-height: 16;
+        commands: root.commands;
+        fill: root.filled ? root.color : transparent;
+        stroke: root.filled ? transparent : root.color;
+        stroke-width: root.thickness;
+    }
+}
+
+export component IconPlay {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; filled: true; commands: "M 5 3 L 12.8 8 L 5 13 Z"; }
+}
+
+export component IconFolder {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 2.2 12.6 V 3.6 H 6.2 L 7.8 5.4 H 13.8 V 12.6 Z"; }
+}
+
+export component IconSave {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 3 10.4 V 12.4 H 13 V 10.4 M 8 2.6 V 9.4 M 5 6.6 L 8 9.6 L 11 6.6";
+    }
+}
+
+export component IconPlus {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 8 3.4 V 12.6 M 3.4 8 H 12.6"; }
+}
+
+export component IconMinus {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 3.4 8 H 12.6"; }
+}
+
+export component IconSearch {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 11.4 7 C 11.4 9.43 9.43 11.4 7 11.4 C 4.57 11.4 2.6 9.43 2.6 7 C 2.6 4.57 4.57 2.6 7 2.6 C 9.43 2.6 11.4 4.57 11.4 7 M 10.3 10.3 L 13.6 13.6";
+    }
+}
+
+export component IconClose {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 4.2 4.2 L 11.8 11.8 M 11.8 4.2 L 4.2 11.8"; }
+}
+
+export component IconDots {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        filled: true;
+        // Três pontos cheios: um por vez, para o preenchimento não depender da
+        // direção de enrolamento entre subcaminhos.
+        commands: "M 9.25 3.3 C 9.25 3.99 8.69 4.55 8 4.55 C 7.31 4.55 6.75 3.99 6.75 3.3 C 6.75 2.61 7.31 2.05 8 2.05 C 8.69 2.05 9.25 2.61 9.25 3.3 Z M 9.25 8 C 9.25 8.69 8.69 9.25 8 9.25 C 7.31 9.25 6.75 8.69 6.75 8 C 6.75 7.31 7.31 6.75 8 6.75 C 8.69 6.75 9.25 7.31 9.25 8 Z M 9.25 12.7 C 9.25 13.39 8.69 13.95 8 13.95 C 7.31 13.95 6.75 13.39 6.75 12.7 C 6.75 12.01 7.31 11.45 8 11.45 C 8.69 11.45 9.25 12.01 9.25 12.7 Z";
+    }
+}
+
+export component IconStar {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        filled: true;
+        commands: "M 8 1.9 L 9.9 6 L 14.3 6.6 L 11 9.5 L 11.9 13.9 L 8 11.8 L 4.1 13.9 L 5 9.5 L 1.7 6.6 L 6.1 6 Z";
+    }
+}
+
+export component IconStarOutline {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 8 1.9 L 9.9 6 L 14.3 6.6 L 11 9.5 L 11.9 13.9 L 8 11.8 L 4.1 13.9 L 5 9.5 L 1.7 6.6 L 6.1 6 Z";
+    }
+}
+
+export component IconHome {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 2.4 7 L 8 2.4 L 13.6 7 V 13.5 H 9.9 V 9.9 H 6.1 V 13.5 H 2.4 Z"; }
+}
+
+export component IconTools {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 2.6 4.4 L 6.2 8 L 2.6 11.6 M 8.6 11.6 H 13.4"; }
+}
+
+export component IconProfiles {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 10.9 5.5 C 10.9 7.1 9.6 8.4 8 8.4 C 6.4 8.4 5.1 7.1 5.1 5.5 C 5.1 3.9 6.4 2.6 8 2.6 C 9.6 2.6 10.9 3.9 10.9 5.5 Z M 2.8 13.6 C 2.8 11 5.2 9.9 8 9.9 C 10.8 9.9 13.2 11 13.2 13.6";
+    }
+}
+
+export component IconWorkflows {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 2.6 3.2 H 7.6 V 6.8 H 2.6 Z M 8.4 9.2 H 13.4 V 12.8 H 8.4 Z M 5.1 6.8 V 11 H 8.4";
+    }
+}
+
+export component IconSettings {
+    in property <brush> color: #1c1c1c;
+    IconPath {
+        width: 100%;
+        height: 100%;
+        color: root.color;
+        commands: "M 2.6 4.4 H 13.4 M 6.2 2.6 V 6.2 M 2.6 8 H 13.4 M 9.8 6.2 V 9.8 M 2.6 11.6 H 13.4 M 5.4 9.8 V 13.4";
+    }
+}
+
+export component IconBack {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 10 3.2 L 5.2 8 L 10 12.8"; }
+}
+
+export component IconCheck {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 3.6 8.4 L 6.8 11.6 L 12.6 4.6"; }
+}
+
+/// Seta para baixo: marca um controle que abre uma lista (não é ação).
+export component IconChevron {
+    in property <brush> color: #1c1c1c;
+    IconPath { width: 100%; height: 100%; color: root.color; commands: "M 4.4 6.4 L 8 10 L 11.6 6.4"; }
+}
+
+/// Despacha o desenho pelo `kind`.
+///
+/// O consumidor informa só `size` (lado do desenho). A caixa externa acompanha a
+/// linha e o desenho é centralizado dentro dela.
+///
+/// `min-height` (e não `height`) é o que permite isso: em Slint, um item de layout
+/// com altura **explícita** é alinhado ao **início** do eixo cruzado, e o ícone
+/// aparecia acima do centro da linha — no trilho da sidebar e no `+` dos botões.
+/// Com `min-height` + `vertical-stretch`, a caixa recebe a altura da linha e o
+/// desenho continua com `size` fixo, centralizado. Fora de layout (sem linha a
+/// acompanhar), a altura fica no próprio `size`, que é o esperado.
+export component Icon {
+    in property <IconKind> kind: IconKind.none;
+    in property <brush> color: #1c1c1c;
+    /// Lado do quadrado desenhado.
+    in property <length> size: 16px;
+
+    width: root.size;
+    min-height: root.size;
+    vertical-stretch: 1;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+
+        Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: root.size;
+            height: root.size;
+            background: transparent;
+
+            if root.kind == IconKind.play: IconPlay { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.folder: IconFolder { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.save: IconSave { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.plus: IconPlus { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.minus: IconMinus { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.search: IconSearch { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.close: IconClose { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.dots: IconDots { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.star: IconStar { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.star-outline: IconStarOutline { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.home: IconHome { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.tools: IconTools { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.profiles: IconProfiles { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.workflows: IconWorkflows { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.settings: IconSettings { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.back: IconBack { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.check: IconCheck { width: 100%; height: 100%; color: root.color; }
+            if root.kind == IconKind.chevron: IconChevron { width: 100%; height: 100%; color: root.color; }
+        }
+    }
+}

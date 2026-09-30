@@ -1,0 +1,16 @@
+[package]
+name = "uige"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UIGE desktop application"
+
+[[bin]]
+name = "uige"
+path = "src/main.rs"
+
+[dependencies]
+uige-core = { workspace = true }
+uige-ui = { workspace = true }
+slint = { workspace = true, features = ["unstable-winit-030"] }
+tokio = { workspace = true }

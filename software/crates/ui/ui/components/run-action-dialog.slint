@@ -1,0 +1,67 @@
+import { Modal } from "./modal.slint";
+import { ExecutionPanel } from "./execution-panel.slint";
+
+/// Execução simples: escolher a ação, informar o parâmetro e executar.
+///
+/// O resultado aparece aqui, no próprio diálogo, que **não** fecha ao executar —
+/// assim dá para ajustar o parâmetro e rodar de novo sem reabrir.
+///
+/// Roda no Workdir global do Workspace. Para escolher outro diretório, o caminho
+/// é o 📁 da lista, que abre a tela da ferramenta.
+export component RunActionDialog {
+    in-out property <bool> open: false;
+    in-out property <bool> busy: false;
+
+    in property <string> tool-name: "";
+    in property <string> workdir-text: "";
+
+    in property <[string]> command-names: [];
+    in-out property <int> selected-command: 0;
+    in property <bool> show-param: false;
+    in-out property <string> param-label: "Parâmetro";
+    in-out property <string> param-text: "";
+
+    in property <string> execution-status: "-";
+    in property <string> execution-exit-code: "-";
+    in property <string> execution-output: "";
+
+    callback selection-changed();
+    callback run-requested();
+    callback close-requested();
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        width: 100%;
+        height: 100%;
+        open: root.open;
+        busy: root.busy;
+        title: "Executar · " + root.tool-name;
+        panel-width: 420px;
+        close-requested => {
+            if (!root.busy) {
+                root.close-requested();
+            }
+        }
+
+        ExecutionPanel {
+            command-names: root.command-names;
+            selected-command <=> root.selected-command;
+            show-param: root.show-param;
+            param-label: root.param-label;
+            param-text <=> root.param-text;
+            workdir-text: root.workdir-text;
+            busy: root.busy;
+            execution-status: root.execution-status;
+            execution-exit-code: root.execution-exit-code;
+            execution-output: root.execution-output;
+            selection-changed => {
+                root.selection-changed();
+            }
+            run-requested => {
+                root.run-requested();
+            }
+        }
+    }
+}

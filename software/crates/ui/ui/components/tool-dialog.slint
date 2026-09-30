@@ -1,0 +1,170 @@
+import { ExecutionPanel } from "./execution-panel.slint";
+import { IconKind } from "./icons.slint";
+import { LightSecondaryButton, LightTextField } from "./light-controls.slint";
+import { Modal } from "./modal.slint";
+import { PageInfo } from "./pager.slint";
+import { SelectList } from "./select-list.slint";
+
+/// Ferramenta + Workdir próprio, em modal.
+///
+/// Representa *ferramenta + Workdir da ferramenta*: o Workdir começa herdando o
+/// global do Workspace e pode ser trocado aqui, para operar em outro diretório
+/// sem mexer no contexto de todo mundo.
+///
+/// Era uma sub-tela de Ferramentas; virou modal porque a tarefa é pontual e
+/// começa e termina no mesmo lugar (o 📁 da linha, ou a favorita da Home). Em
+/// sub-tela, abrir da Home exigia trocar de seção para o clique ter efeito, e
+/// voltar exigia um outro clique — dois estados de navegação para uma tarefa só.
+///
+/// Escolher outro diretório continua sendo o seletor de pastas, que também é
+/// modal. O app mantém **um modal por vez**: enquanto o seletor está aberto esta
+/// camada sai de cena, em vez de ficar atrás dele com um segundo fundo escurecido
+/// (ver `AppWindow`). Ao fechar o seletor, esta camada volta — com o caminho novo.
+export component ToolDialog {
+    in-out property <bool> open: false;
+    in property <bool> busy: false;
+
+    in property <string> tool-name: "";
+    in property <string> manifest-version-text: "";
+
+    in-out property <string> workdir-text: "";
+
+    in property <[string]> command-names: [];
+    in-out property <int> selected-command: 0;
+    in property <bool> show-param: false;
+    in property <string> param-label: "Parâmetro";
+    in-out property <string> param-text: "";
+    in property <string> execution-status: "-";
+    in property <string> execution-exit-code: "-";
+    in property <string> execution-output: "";
+
+    in property <[string]> history-labels: [];
+    in-out property <int> selected-history: 0;
+    in property <PageInfo> history-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+
+    callback close-requested();
+    callback selection-changed();
+    callback run-requested();
+    callback choose-workdir-requested();
+    callback history-selection-changed();
+    callback history-page-requested(int);
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        width: 100%;
+        height: 100%;
+        open: root.open;
+        busy: root.busy;
+        title: root.tool-name;
+        panel-width: 460px;
+        close-requested => {
+            if (!root.busy) {
+                root.close-requested();
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+
+            Text {
+                text: "Workdir da ferramenta";
+                font-size: 12px;
+                font-weight: 600;
+                vertical-alignment: center;
+                color: #5e5c64;
+            }
+
+            Text {
+                text: root.manifest-version-text;
+                font-size: 12px;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+                horizontal-alignment: right;
+                overflow: elide;
+                color: #9a9996;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+
+            LightTextField {
+                horizontal-stretch: 1;
+                text <=> root.workdir-text;
+                enabled: !root.busy;
+                // Sem ícone no campo: o glifo de pasta é do botão ao lado, e dois
+                // iguais a `8px` de distância parecem engano. É o mesmo arranjo da
+                // barra de contexto.
+                placeholder: "Diretório onde esta ferramenta vai operar";
+            }
+
+            // Mesma ação da barra de contexto, com outro destino: aqui o caminho
+            // escolhido fica na ferramenta, não no Workspace.
+            LightSecondaryButton {
+                text: "Escolher";
+                icon: IconKind.folder;
+                enabled: !root.busy;
+                clicked => {
+                    root.choose-workdir-requested();
+                }
+            }
+        }
+
+        Text {
+            text: "Herdado do Workdir global. Alterar aqui não muda o global.";
+            color: #9a9996;
+            font-size: 12px;
+            overflow: elide;
+        }
+
+        ExecutionPanel {
+            command-names: root.command-names;
+            selected-command <=> root.selected-command;
+            show-param: root.show-param;
+            param-label: root.param-label;
+            param-text <=> root.param-text;
+            workdir-text: root.workdir-text;
+            busy: root.busy;
+            execution-status: root.execution-status;
+            execution-exit-code: root.execution-exit-code;
+            execution-output: root.execution-output;
+            selection-changed => {
+                root.selection-changed();
+            }
+            run-requested => {
+                root.run-requested();
+            }
+        }
+
+        Text {
+            text: "Execuções desta ferramenta";
+            font-size: 12px;
+            font-weight: 600;
+            color: #5e5c64;
+        }
+
+        // Superfície do grupo: o histórico se separa do fundo pelo tom.
+        Rectangle {
+            height: 124px;
+            border-radius: 8px;
+            background: #f7f6f5;
+            clip: true;
+
+            SelectList {
+                items: root.history-labels;
+                selected-index <=> root.selected-history;
+                page-info: root.history-page-info;
+                enabled: !root.busy;
+                empty-text: "Nenhuma execução desta ferramenta.";
+                selected => {
+                    root.history-selection-changed();
+                }
+                page-requested(page) => {
+                    root.history-page-requested(page);
+                }
+            }
+        }
+    }
+}

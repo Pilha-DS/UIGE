@@ -1,0 +1,40 @@
+/// Corpo de uma seção: o interior de uma aba, com largura limitada e centralizado.
+///
+/// O interior de uma aba não é a área da seção inteira. Em janela larga, deixar o
+/// conteúdo esticar até as bordas afasta rótulos e valores e faz cada linha
+/// atravessar a tela para ser lida. Aqui o conteúdo para em `max-content-width` e
+/// centraliza, como uma coluna de leitura.
+///
+/// A largura da coluna vem de `min` de dois limites:
+///
+/// - `parent.width - 2 * side-margin` — o recuo mínimo até a borda vale sempre,
+///   inclusive em janela estreita, quando é ele que dimensiona;
+/// - `max-content-width` — o teto, que só entra em janela larga.
+///
+/// O recuo lateral interno das telas é `0`: as superfícies de grupo vão até a
+/// borda da coluna de propósito, para delimitá-la. O que separa o conteúdo da
+/// borda da janela é o `side-margin` daqui.
+///
+/// Ver `docs/standards/ui.md`, seção **Margens e densidade**.
+export component PageBody inherits Rectangle {
+    /// Largura máxima da coluna. É o valor canônico do corpo de seção do UIGE: as
+    /// telas não passam valor próprio, para não divergirem.
+    in property <length> max-content-width: 560px;
+    /// Recuo mínimo entre a coluna e a borda da área da seção.
+    in property <length> side-margin: 24px;
+
+    width: 100%;
+    height: 100%;
+    background: transparent;
+
+    // As children entram nesta coluna, não no raiz: é ela que tem largura
+    // limitada e posição centralizada.
+    column := Rectangle {
+        x: max(root.side-margin, (parent.width - self.width) * 0.5);
+        width: max(0px, min(parent.width - 2 * root.side-margin, root.max-content-width));
+        height: 100%;
+        background: transparent;
+
+        @children
+    }
+}

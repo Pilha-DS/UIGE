@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "v1",
+  "id": "git",
+  "name": "Git",
+  "description": "Operações Git seguras para demonstração (somente leitura).",
+  "executable": "git",
+  "commands": [
+    {
+      "id": "version",
+      "name": "Versão",
+      "description": "Mostra a versão do Git instalado.",
+      "argvPrefix": ["--version"],
+      "parameters": []
+    },
+    {
+      "id": "status",
+      "name": "Status",
+      "description": "Mostra o status do repositório no workdir.",
+      "argvPrefix": ["status", "--short", "--branch"],
+      "parameters": []
+    },
+    {
+      "id": "branch-list",
+      "name": "Listar branches",
+      "description": "Lista branches locais e remotas.",
+      "argvPrefix": ["branch", "-a"],
+      "parameters": []
+    },
+    {
+      "id": "log",
+      "name": "Log recente",
+      "description": "Mostra os últimos commits em uma linha.",
+      "argvPrefix": ["log", "-n", "5", "--oneline"],
+      "parameters": []
+    },
+    {
+      "id": "remote-v",
+      "name": "Remotes",
+      "description": "Lista remotes configurados.",
+      "argvPrefix": ["remote", "-v"],
+      "parameters": []
+    }
+  ]
+}

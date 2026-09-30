@@ -1,0 +1,88 @@
+import { IconKind } from "../components/icons.slint";
+import { LightSecondaryButton } from "../components/light-controls.slint";
+import { PageBody } from "../components/page-body.slint";
+import { PageInfo } from "../components/pager.slint";
+import { SelectList } from "../components/select-list.slint";
+
+/// Perfis: configuração reutilizável de uma execução.
+///
+/// Escolher um perfil carrega a configuração na seção Ferramentas, onde ele é
+/// executado. Executar direto daqui depende dos modos de abertura de perfil,
+/// que ainda não existem.
+export component ProfilesScreen {
+    in property <[string]> profile-names: [];
+    in-out property <int> selected-profile: 0;
+    in property <PageInfo> page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in property <bool> busy: false;
+
+    callback profile-selection-changed();
+    callback create-profile-requested();
+    callback page-requested(int);
+
+    // Preenche o pai: `100%` no elemento raiz resolveria contra a instância.
+    width: 100%;
+    height: 100%;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        PageBody {
+            VerticalLayout {
+                padding-top: 16px;
+                padding-bottom: 16px;
+                spacing: 8px;
+
+                Text {
+                    text: "Perfis";
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1c1c1c;
+                }
+
+                Text {
+                    text: "Selecionar um perfil carrega a ferramenta, a ação e os parâmetros em Ferramentas.";
+                    color: #9a9996;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+
+                // Superfície do grupo: a lista se separa do fundo pelo tom, não por caixa.
+                Rectangle {
+                    vertical-stretch: 1;
+                    border-radius: 8px;
+                    background: #f7f6f5;
+                    clip: true;
+
+                    SelectList {
+                        items: root.profile-names;
+                        selected-index <=> root.selected-profile;
+                        page-info: root.page-info;
+                        enabled: !root.busy;
+                        empty-text: "Nenhum perfil criado.";
+                        selected => {
+                            root.profile-selection-changed();
+                        }
+                        page-requested(page) => {
+                            root.page-requested(page);
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    LightSecondaryButton {
+                        text: "Criar perfil";
+                        icon: IconKind.plus;
+                        enabled: !root.busy;
+                        clicked => {
+                            root.create-profile-requested();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

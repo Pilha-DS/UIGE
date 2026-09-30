@@ -1,0 +1,144 @@
+import { ScrollView } from "std-widgets.slint";
+import { Icon, IconKind } from "./icons.slint";
+
+/// Overlay modal canônico do UIGE.
+///
+/// Bloqueia a tela de fundo, centra um painel e expõe ações via callbacks.
+/// O conteúdo específico fica nos filhos (`@children`).
+///
+/// O painel é do tamanho do conteúdo, **limitado à janela**. Um painel mais alto
+/// que a janela era desenhado a partir do topo e o que passava da borda de baixo
+/// ficava fora — sem rolagem, sem como alcançar. Com o teto, o **corpo** do painel
+/// rola: o cabeçalho e o rodapé continuam no lugar, então o conteúdo que não cabe
+/// fica alcançável e a ação nunca sai de vista.
+///
+/// Cores do painel são explícitas para não herdar tema escuro (texto invisível).
+export component Modal {
+    in-out property <bool> open: false;
+    in property <string> title: "";
+    in property <length> panel-width: 360px;
+    in-out property <bool> busy: false;
+    /// `false` esconde o X do cabeçalho: diálogos com ação destrutiva ou
+    /// irreversível exigem escolha explícita.
+    in property <bool> closable: true;
+    /// Folga mínima até a borda da janela. O painel nunca encosta na borda: sem
+    /// a folga ele deixaria de parecer flutuar sobre a tela.
+    in property <length> margin: 24px;
+
+    callback close-requested();
+
+    width: 100%;
+    height: 100%;
+
+    // `visible` (não `if`) — @children não pode viver dentro de elemento condicional.
+    Rectangle {
+        visible: root.open;
+        width: 100%;
+        height: 100%;
+
+        // Camada 1: só o fundo fecha o modal.
+        Rectangle {
+            width: 100%;
+            height: 100%;
+            background: #1c1c1c5e;
+
+            TouchArea {
+                width: 100%;
+                height: 100%;
+                enabled: root.open && !root.busy;
+                clicked => {
+                    root.close-requested();
+                }
+            }
+        }
+
+        // Camada 2: painel dimensionado ao conteúdo (não estica na janela inteira)
+        // e limitado a ela (não vaza pela borda de baixo).
+        Rectangle {
+            width: min(root.panel-width, parent.width - 2 * root.margin);
+            // `min` com o teto: o painel cresce com o conteúdo enquanto couber, e
+            // para no teto quando não couber. `parent` é a camada de fundo, que
+            // preenche a janela — é a altura da janela que vale como limite.
+            height: min(panel-layout.preferred-height, parent.height - 2 * root.margin);
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            background: #ffffff;
+            border-radius: 10px;
+            // O conteúdo rola dentro do painel: sem `clip`, ele seria desenhado
+            // por fora do retângulo arredondado.
+            clip: true;
+            drop-shadow-blur: 24px;
+            drop-shadow-color: #00000038;
+            drop-shadow-offset-y: 8px;
+
+            // Absorve cliques vazios sem cobrir os controles (fica atrás do layout).
+            TouchArea {
+                width: 100%;
+                height: 100%;
+            }
+
+            panel-layout := VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    Text {
+                        text: root.title;
+                        horizontal-stretch: 1;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        font-size: 15px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    if root.closable: Rectangle {
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 6px;
+                        background: close-hover.has-hover ? #eceae8 : transparent;
+
+                        Icon {
+                            size: 12px;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                            kind: IconKind.close;
+                            color: #5e5c64;
+                        }
+
+                        close-hover := TouchArea {
+                            enabled: !root.busy;
+                            clicked => {
+                                root.close-requested();
+                            }
+                        }
+                    }
+                }
+
+                // Corpo rolável. A altura preferida vem do **conteúdo**, e não do
+                // `ScrollView`: ele declara `preferred-height: 100%` do pai, o que
+                // amarraria a altura do painel a ela mesma. Aqui o painel cresce
+                // até o conteúdo precisar e passa a rolar quando o teto entra.
+                //
+                // O `VerticalLayout` interno não é enfeite: `@children` cai dentro
+                // de um `Flickable`, que não é layout — com filhos soltos, um
+                // diálogo que passa vários irmãos (o seletor de Workdir passa) os
+                // empilharia todos na mesma posição.
+                body := ScrollView {
+                    preferred-height: body-layout.preferred-height;
+                    vertical-stretch: 1;
+
+                    body-layout := VerticalLayout {
+                        // `100%` resolve contra o `Flickable`: sem isto o corpo
+                        // assume a largura do conteúdo e o texto não estica.
+                        width: 100%;
+                        spacing: 12px;
+                        @children
+                    }
+                }
+            }
+        }
+    }
+}

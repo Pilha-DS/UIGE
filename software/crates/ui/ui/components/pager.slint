@@ -1,0 +1,71 @@
+import { LightSecondaryButton } from "./light-controls.slint";
+
+/// Estado de paginação de uma lista, como a UI precisa exibir.
+///
+/// `total` é o número de itens da lista **inteira** (depois do filtro), não o da
+/// página: é ele que dá à pessoa a noção do tamanho do conjunto. `offset` é a
+/// posição do primeiro item da página na lista inteira — com ele a lista sabe
+/// traduzir o índice da linha para o índice real, e o consumidor da seleção nunca
+/// precisa saber que existe paginação.
+///
+/// Ver `docs/standards/ui.md`, seção **Listas longas**.
+export struct PageInfo {
+    page: int,
+    page-count: int,
+    total: int,
+    offset: int,
+}
+
+/// Controle de paginação de uma lista longa.
+///
+/// Só emite a intenção de andar; quem decide o recorte é quem tem os itens — a UI
+/// não consegue fatiar um modelo. Por isso o estado da página vive no app (Rust),
+/// junto dos dados, e chega aqui pronto em `PageInfo`.
+///
+/// Quem usa instancia o paginador dentro de um `if`, e não com `visible`: em Slint
+/// um item invisível ainda ocupa lugar no layout, e o paginador de uma lista curta
+/// reservaria altura sem ter nada para mostrar.
+export component Pager {
+    in property <PageInfo> info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in property <int> page-size: 10;
+    in property <bool> enabled: true;
+
+    callback previous-requested();
+    callback next-requested();
+
+    height: 30px;
+
+    HorizontalLayout {
+        width: 100%;
+        alignment: end;
+        spacing: 8px;
+
+        Text {
+            text: root.range-label;
+            vertical-alignment: center;
+            color: #9a9996;
+            font-size: 12px;
+        }
+
+        LightSecondaryButton {
+            text: "Anterior";
+            enabled: root.enabled && root.info.page > 0;
+            clicked => { root.previous-requested(); }
+        }
+
+        LightSecondaryButton {
+            text: "Próxima";
+            enabled: root.enabled && root.info.page < root.info.page-count - 1;
+            clicked => { root.next-requested(); }
+        }
+    }
+
+    // Faixa exibida, em base 1: "itens 11–20 de 42". A página sozinha não diz o
+    // tamanho do conjunto, e é isso que a pessoa quer saber antes de avançar.
+    property <int> remaining: root.info.total - root.info.offset;
+    property <int> items-shown: root.remaining > root.page-size ? root.page-size : root.remaining;
+
+    property <string> range-label: "Página " + (root.info.page + 1) + " de " + root.info.page-count
+        + " · itens " + (root.info.offset + 1) + "–" + (root.info.offset + root.items-shown)
+        + " de " + root.info.total;
+}

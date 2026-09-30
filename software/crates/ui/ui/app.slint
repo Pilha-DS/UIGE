@@ -1,0 +1,786 @@
+import { Palette } from "std-widgets.slint";
+import { ChooseWorkdirDialog } from "./components/choose-workdir-dialog.slint";
+import { CreateProfileDialog } from "./components/create-profile-dialog.slint";
+import { CreateWorkspaceDialog } from "./components/create-workspace-dialog.slint";
+import { IconKind } from "./components/icons.slint";
+import { LightSecondaryButton, LightSelect, LightTextField } from "./components/light-controls.slint";
+import { PageInfo } from "./components/pager.slint";
+import { RunActionDialog } from "./components/run-action-dialog.slint";
+import { Sidebar } from "./components/sidebar.slint";
+import { ToolActionsDialog } from "./components/tool-actions-dialog.slint";
+import { ToolDialog } from "./components/tool-dialog.slint";
+import { WorkflowStepDialog } from "./components/workflow-step-dialog.slint";
+import { HomeScreen } from "./screens/home.slint";
+import { ProfilesScreen } from "./screens/profiles.slint";
+import { SettingsScreen } from "./screens/settings.slint";
+import { ToolsScreen } from "./screens/tools.slint";
+import { WorkflowCreateScreen } from "./screens/workflow-create.slint";
+import { WorkflowsScreen } from "./screens/workflows.slint";
+
+/// Janela principal do UIGE: barra de contexto, sidebar, área da seção e barra de status.
+///
+/// A estrutura (por que essas seções e onde cada coisa mora) está em
+/// `docs/product/interface.md`. Aqui fica apenas o desenho e a ligação.
+export component AppWindow inherits Window {
+    title: "UIGE";
+    preferred-width: 900px;
+    preferred-height: 600px;
+    // Mínimo pensado para a lista de ferramentas ainda caber com os três
+    // botões de ação visíveis.
+    min-width: 620px;
+    min-height: 440px;
+
+    // Seções: 0 Home · 1 Ferramentas · 2 Perfis · 3 Workflows · 4 Configurações
+    in-out property <int> current-section: 0;
+
+    /// Nomes das seções na ordem dos índices. Uma lista só, usada pela sidebar e
+    /// pela localização na barra de status — duas listas sairiam de sincronia.
+    property <[string]> section-names: ["Home", "Ferramentas", "Perfis", "Workflows", "Configurações"];
+    property <[IconKind]> section-icons: [IconKind.home, IconKind.tools, IconKind.profiles, IconKind.workflows, IconKind.settings];
+
+    // Responsivo: em janela estreita a sidebar perde os rótulos (vira trilho) e a
+    // barra de contexto passa os botões a só ícone. O limite (800px) fica abaixo
+    // da largura padrão: no tamanho normal os rótulos aparecem, e o trilho é o
+    // recurso para quando a janela realmente encolhe.
+    property <bool> rail-nav: root.width < 800px;
+    property <bool> tight: root.width < 800px;
+    property <length> nav-width: root.rail-nav ? 52px : 168px;
+
+    // Alturas da moldura. Nomeadas porque cada uma é usada em quatro lugares
+    // (a barra, o deslocamento da área da seção, a sombra do limite e a barra de
+    // status); o número solto sairia de sincronia na primeira mudança.
+    property <length> bar-height: 44px;
+    property <length> status-height: 26px;
+
+    /// Onde o usuário está: a seção atual. A tela da ferramenta virou modal e não
+    /// muda a seção, então não entra aqui.
+    property <string> location-label: root.section-names[root.current-section];
+
+    in-out property <string> workspace-name: "Padrão";
+    in-out property <bool> workspace-is-default: true;
+    in-out property <[string]> workspace-names: [];
+    in-out property <int> selected-workspace: 0;
+    in-out property <string> workdir-text: "";
+
+    // Workdir — seleção por navegação de pastas (botão "Escolher"). O mesmo
+    // diálogo serve ao Workdir global e ao de uma ferramenta: `title` e `hint`
+    // dizem qual dos dois está em jogo, porque só o app sabe o destino.
+    in-out property <bool> choose-workdir-open: false;
+    in-out property <string> choose-workdir-path: "";
+    in-out property <[string]> choose-workdir-entries: [];
+    in-out property <int> choose-workdir-selected: -1;
+    in-out property <string> choose-workdir-error: "";
+    in-out property <string> choose-workdir-title: "Workdir global";
+    in-out property <string> choose-workdir-hint: "Pasta onde as execuções simples deste workspace vão rodar.";
+
+    in-out property <bool> create-workspace-open: false;
+    in-out property <string> create-workspace-name: "";
+    in-out property <string> create-workspace-workdir: "";
+    in-out property <string> create-workspace-error: "";
+
+    // Ferramentas — lista
+    in-out property <[string]> tool-names: [];
+    in-out property <string> tool-search-text: "";
+    in-out property <bool> tool-workspace-only: true;
+
+    // Recorte de página das listas longas. O estado vive no app, junto dos dados:
+    // a UI não consegue fatiar um modelo, e a página é uma consequência do
+    // conteúdo. Uma lista curtam usa o padrão (uma página) e não mostra o
+    // paginador.
+    in-out property <PageInfo> tool-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in-out property <PageInfo> profile-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in-out property <PageInfo> history-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in-out property <PageInfo> candidate-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in-out property <PageInfo> workflow-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+    in-out property <PageInfo> workflow-history-page-info: { page: 0, page-count: 1, total: 0, offset: 0 };
+
+    // Ferramentas — tela da ferramenta (sub-nível, destino do 📁)
+    in-out property <bool> tool-detail-open: false;
+    in-out property <string> tool-workdir-text: "";
+    in-out property <string> selected-tool-name: "";
+    in-out property <string> manifest-version-text: "";
+    in-out property <[string]> command-names: [];
+    in-out property <int> selected-command: 0;
+    in-out property <bool> show-param: false;
+    in-out property <string> param-label: "Parâmetro";
+    in-out property <string> param-text: "";
+    in-out property <[string]> history-labels: [];
+    in-out property <int> selected-history: 0;
+
+    // Home — favoritas do Workspace ativo, na mesma linha de Ferramentas.
+    in-out property <[string]> favorite-tools: [];
+    /// Vazia quando todas as favoritas cabem na Home (ver `MAX_HOME_FAVORITES`).
+    in-out property <string> favorite-tools-note: "";
+
+    // Ferramentas — execução simples (modal do ▶), separada da tela acima:
+    // as duas não compartilham resultado, senão uma mostraria o output da outra.
+    in-out property <bool> run-open: false;
+    in-out property <string> run-tool-name: "";
+    in-out property <[string]> run-command-names: [];
+    in-out property <int> run-selected-command: 0;
+    in-out property <bool> run-show-param: false;
+    in-out property <string> run-param-label: "Parâmetro";
+    in-out property <string> run-param-text: "";
+    in-out property <string> run-status: "-";
+    in-out property <string> run-exit-code: "-";
+    in-out property <string> run-output: "";
+
+    // Ferramentas — ações da linha (modal do ⋮)
+    in-out property <bool> tool-actions-open: false;
+    in-out property <string> tool-actions-name: "";
+    in-out property <bool> tool-actions-is-favorite: false;
+    in-out property <bool> tool-actions-in-workspace: false;
+
+    in-out property <[string]> profile-names: [];
+    in-out property <int> selected-profile: 0;
+
+    in-out property <string> manifests-dir-text: "";
+    in-out property <[string]> manifest-candidates: [];
+    in-out property <int> selected-candidate: 0;
+    in-out property <string> candidate-detail-text: "";
+
+    in-out property <[string]> workflow-names: [];
+    in-out property <int> selected-workflow: 0;
+    in-out property <[string]> workflow-step-results: [];
+    /// Título da área de etapas: ela mostra a definição do workflow selecionado
+    /// ou o resultado de uma execução, e o usuário precisa saber qual dos dois.
+    in-out property <string> workflow-steps-title: "Etapas";
+    in-out property <[string]> workflow-history-labels: [];
+    in-out property <int> selected-workflow-history: 0;
+
+    in-out property <bool> create-profile-open: false;
+    in-out property <string> create-profile-name: "";
+    in-out property <string> create-profile-error: "";
+    in-out property <[string]> create-profile-tool-names: [];
+    in-out property <int> create-profile-selected-tool: 0;
+    in-out property <[string]> create-profile-command-names: [];
+    in-out property <int> create-profile-selected-command: 0;
+    in-out property <bool> create-profile-show-param: false;
+    in-out property <string> create-profile-param-label: "Parâmetro";
+    in-out property <string> create-profile-param-text: "";
+
+    in-out property <bool> create-workflow-open: false;
+    in-out property <string> create-workflow-name: "";
+    in-out property <string> create-workflow-error: "";
+    in-out property <string> create-workflow-step-error: "";
+    in-out property <[string]> create-workflow-tool-names: [];
+    in-out property <int> create-workflow-selected-tool: 0;
+    in-out property <[string]> create-workflow-command-names: [];
+    in-out property <int> create-workflow-selected-command: 0;
+    in-out property <bool> create-workflow-show-param: false;
+    in-out property <string> create-workflow-param-label: "Parâmetro";
+    in-out property <string> create-workflow-param-text: "";
+    in-out property <int> create-workflow-selected-on-error: 0;
+    in-out property <string> create-workflow-step-workdir: "";
+    in-out property <[string]> create-workflow-step-labels: [];
+    /// Detalhamento da etapa em construção. Abrir e fechar é de `open` /
+    /// `close-workflow-step`: a etapa só entra na lista ao confirmar.
+    in-out property <bool> create-workflow-step-open: false;
+
+    /// Mensagens curtas do aplicativo. O resultado de execução fica no painel de
+    /// execução, dentro da tela que executou — não aqui.
+    in-out property <string> status-text: "Pronto";
+    in-out property <string> execution-status: "-";
+    in-out property <string> execution-exit-code: "-";
+    in-out property <string> execution-output: "";
+    in-out property <bool> busy: false;
+
+    callback tool-filter-changed();
+    callback tool-page-requested(int);
+    callback tool-selection-changed();
+    callback open-run-dialog(int);
+    callback close-run-dialog();
+    callback run-quick-action();
+    callback run-selection-changed();
+    // Home: as favoritas usam as mesmas ações da lista, com lista própria.
+    callback home-favorite-run-requested(int);
+    callback home-favorite-open-requested(int);
+    callback home-favorite-actions-requested(int);
+    callback open-tool-detail(int);
+    callback close-tool-detail();
+    callback open-tool-actions(int);
+    callback close-tool-actions();
+    callback tool-actions-toggle-favorite();
+    callback tool-actions-toggle-workspace();
+    callback tool-actions-create-profile();
+    callback profile-selection-changed();
+    callback profile-page-requested(int);
+    callback history-selection-changed();
+    callback history-page-requested(int);
+    callback save-workdir();
+    callback open-choose-workdir();
+    callback open-choose-tool-workdir();
+    callback close-choose-workdir();
+    callback choose-workdir-entry-selected(int);
+    callback choose-workdir-go();
+    callback choose-workdir-apply();
+    callback workspace-selection-changed();
+    callback open-create-workspace();
+    callback close-create-workspace();
+    callback confirm-create-workspace();
+    callback rename-workspace();
+    callback delete-workspace();
+    callback open-create-profile();
+    callback close-create-profile();
+    callback confirm-create-profile();
+    callback create-profile-selection-changed();
+    callback run-action();
+    callback discover-manifests();
+    callback candidate-selection-changed();
+    callback candidate-page-requested(int);
+    callback import-manifest();
+    callback workflow-selection-changed();
+    callback workflow-page-requested(int);
+    callback workflow-history-selection-changed();
+    callback workflow-history-page-requested(int);
+    callback run-workflow();
+    callback open-create-workflow();
+    callback close-create-workflow();
+    callback create-workflow-selection-changed();
+    callback open-workflow-step();
+    callback close-workflow-step();
+    callback add-workflow-step();
+    callback remove-workflow-step();
+    callback confirm-create-workflow();
+
+    init => {
+        // Tema claro fixo: os widgets de std seguem o esquema do Palette, e a
+        // interface usa cores explícitas. Ver `docs/standards/ui.md`.
+        Palette.color-scheme = ColorScheme.light;
+    }
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        // ---- barra de contexto: Workspace e Workdir, visíveis em toda a janela.
+        // Sem linha separadora: a superfície da barra e a sombra abaixo já
+        // delimitam a área.
+        Rectangle {
+            x: 0;
+            y: 0;
+            width: 100%;
+            height: root.bar-height;
+            background: #f7f6f5;
+
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                spacing: 8px;
+
+                if !root.tight: Text {
+                    text: "Workspace";
+                    font-size: 12px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    color: #5e5c64;
+                }
+
+                LightSelect {
+                    width: root.tight ? 132px : 156px;
+                    model: root.workspace-names;
+                    current-index <=> root.selected-workspace;
+                    enabled: !root.busy;
+                    placeholder: "Workspace";
+                    selected(index) => {
+                        root.workspace-selection-changed();
+                    }
+                }
+
+                LightSecondaryButton {
+                    text: "Novo";
+                    icon: IconKind.plus;
+                    icon-only: root.tight;
+                    enabled: !root.busy;
+                    clicked => {
+                        root.open-create-workspace();
+                    }
+                }
+
+                if !root.tight: Text {
+                    text: "Workdir global";
+                    font-size: 12px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    color: #5e5c64;
+                }
+
+                // O campo elide o caminho quando não cabe: mostrar o caminho
+                // inteiro empurraria os botões para fora da barra.
+                LightTextField {
+                    horizontal-stretch: 1;
+                    text <=> root.workdir-text;
+                    enabled: !root.busy;
+                    placeholder: "Diretório de trabalho do workspace";
+                }
+
+                // Navegar por pastas é mais rápido que digitar o caminho inteiro.
+                LightSecondaryButton {
+                    text: "Escolher";
+                    icon: IconKind.folder;
+                    icon-only: root.tight;
+                    enabled: !root.busy;
+                    clicked => {
+                        root.open-choose-workdir();
+                    }
+                }
+
+                LightSecondaryButton {
+                    text: "Salvar";
+                    icon: IconKind.save;
+                    icon-only: root.tight;
+                    enabled: !root.busy;
+                    clicked => {
+                        root.save-workdir();
+                    }
+                }
+            }
+        }
+
+        // ---- navegação
+        Sidebar {
+            x: 0;
+            y: root.bar-height;
+            width: root.nav-width;
+            height: root.height - root.bar-height - root.status-height;
+            items: root.section-names;
+            icons: root.section-icons;
+            compact: root.rail-nav;
+            current-index <=> root.current-section;
+        }
+
+        // ---- área da seção selecionada
+        Rectangle {
+            x: root.nav-width;
+            y: root.bar-height;
+            width: root.width - root.nav-width;
+            height: root.height - root.bar-height - root.status-height;
+
+            if root.current-section == 0: HomeScreen {
+                recent-executions: root.history-labels;
+                favorite-tools: root.favorite-tools;
+                favorite-tools-note: root.favorite-tools-note;
+                favorite-run-requested(idx) => {
+                    root.home-favorite-run-requested(idx);
+                }
+                favorite-open-requested(idx) => {
+                    root.home-favorite-open-requested(idx);
+                }
+                favorite-actions-requested(idx) => {
+                    root.home-favorite-actions-requested(idx);
+                }
+                create-profile-requested => {
+                    root.create-profile-error = "";
+                    root.create-profile-name = "";
+                    root.open-create-profile();
+                }
+                create-workflow-requested => {
+                    root.create-workflow-error = "";
+                    root.create-workflow-step-error = "";
+                    root.create-workflow-name = "";
+                    root.open-create-workflow();
+                    // A criação é uma tela dentro de Workflows: a partir da Home
+                    // é preciso ir para lá, senão a tela abre fora de vista.
+                    root.current-section = 3;
+                }
+                open-settings-requested => {
+                    root.current-section = 4;
+                }
+            }
+
+            // Ferramentas: a lista. A ferramenta em si (📁) é modal — ver abaixo.
+            if root.current-section == 1: ToolsScreen {
+                tool-names: root.tool-names;
+                search-text <=> root.tool-search-text;
+                workspace-only <=> root.tool-workspace-only;
+                page-info: root.tool-page-info;
+                busy: root.busy;
+                filter-changed => {
+                    root.tool-filter-changed();
+                }
+                page-requested(page) => {
+                    root.tool-page-requested(page);
+                }
+                run-requested(idx) => {
+                    root.open-run-dialog(idx);
+                }
+                open-requested(idx) => {
+                    root.open-tool-detail(idx);
+                }
+                actions-requested(idx) => {
+                    root.open-tool-actions(idx);
+                }
+            }
+
+            if root.current-section == 2: ProfilesScreen {
+                profile-names: root.profile-names;
+                selected-profile <=> root.selected-profile;
+                page-info: root.profile-page-info;
+                busy: root.busy;
+                profile-selection-changed => {
+                    root.profile-selection-changed();
+                }
+                page-requested(page) => {
+                    root.profile-page-requested(page);
+                }
+                create-profile-requested => {
+                    root.create-profile-error = "";
+                    root.create-profile-name = "";
+                    root.open-create-profile();
+                }
+            }
+
+            // Workflows: a lista e, como sub-nível, a criação — que é tela, e não
+            // modal, porque a etapa que ela monta já é um modal.
+            if root.current-section == 3: Rectangle {
+                width: 100%;
+                height: 100%;
+
+                if !root.create-workflow-open: WorkflowsScreen {
+                    workflow-names: root.workflow-names;
+                    selected-workflow <=> root.selected-workflow;
+                    workflow-page-info: root.workflow-page-info;
+                    step-results: root.workflow-step-results;
+                    steps-title: root.workflow-steps-title;
+                    history-labels: root.workflow-history-labels;
+                    selected-history <=> root.selected-workflow-history;
+                    history-page-info: root.workflow-history-page-info;
+                    busy: root.busy;
+                    workflow-selection-changed => {
+                        root.workflow-selection-changed();
+                    }
+                    workflow-page-requested(page) => {
+                        root.workflow-page-requested(page);
+                    }
+                    history-selection-changed => {
+                        root.workflow-history-selection-changed();
+                    }
+                    history-page-requested(page) => {
+                        root.workflow-history-page-requested(page);
+                    }
+                    create-workflow-requested => {
+                        root.create-workflow-error = "";
+                        root.create-workflow-step-error = "";
+                        root.create-workflow-name = "";
+                        root.open-create-workflow();
+                    }
+                    run-requested => {
+                        root.run-workflow();
+                    }
+                }
+
+                if root.create-workflow-open: WorkflowCreateScreen {
+                    busy: root.busy;
+                    name-text <=> root.create-workflow-name;
+                    step-error-text <=> root.create-workflow-step-error;
+                    error-text <=> root.create-workflow-error;
+                    step-labels: root.create-workflow-step-labels;
+                    back-requested => {
+                        root.close-create-workflow();
+                    }
+                    open-step-requested => {
+                        root.create-workflow-step-error = "";
+                        root.open-workflow-step();
+                    }
+                    remove-step-requested => {
+                        root.remove-workflow-step();
+                    }
+                    confirm-requested => {
+                        root.confirm-create-workflow();
+                    }
+                }
+            }
+
+            if root.current-section == 4: SettingsScreen {
+                workspace-name-text <=> root.workspace-name;
+                workspace-is-default: root.workspace-is-default;
+                manifests-dir-text <=> root.manifests-dir-text;
+                candidates: root.manifest-candidates;
+                selected-candidate <=> root.selected-candidate;
+                candidate-page-info: root.candidate-page-info;
+                candidate-detail-text: root.candidate-detail-text;
+                busy: root.busy;
+                rename-workspace-requested => {
+                    root.rename-workspace();
+                }
+                delete-workspace-requested => {
+                    root.delete-workspace();
+                }
+                discover-requested => {
+                    root.discover-manifests();
+                }
+                candidate-selection-changed => {
+                    root.candidate-selection-changed();
+                }
+                candidate-page-requested(page) => {
+                    root.candidate-page-requested(page);
+                }
+                import-requested => {
+                    root.import-manifest();
+                }
+            }
+        }
+
+        // ---- barra de status: onde o usuário está (esquerda) e a mensagem (direita)
+        Rectangle {
+            x: 0;
+            y: root.height - root.status-height;
+            width: 100%;
+            height: root.status-height;
+            background: #f7f6f5;
+
+            // Localização atual: o rótulo da sidebar não cabe quando ela está em
+            // modo trilho, então a seção também aparece aqui.
+            Text {
+                x: 16px;
+                width: parent.width / 2 - 16px;
+                height: 100%;
+                text: root.location-label;
+                vertical-alignment: center;
+                overflow: elide;
+                font-size: 12px;
+                font-weight: 600;
+                color: #1c1c1c;
+            }
+
+            Text {
+                x: parent.width / 2;
+                width: parent.width / 2 - 16px;
+                height: 100%;
+                text: root.status-text;
+                vertical-alignment: center;
+                horizontal-alignment: right;
+                overflow: elide;
+                color: #9a9996;
+                font-size: 12px;
+            }
+        }
+
+        // ---- sombras dos limites.
+        // Desenhadas depois do conteúdo: a `drop-shadow` de uma barra ficaria
+        // atrás da área declarada depois dela. São faixas de gradiente, não bordas.
+        Rectangle {
+            x: root.nav-width;
+            y: root.bar-height;
+            width: 5px;
+            height: root.height - root.bar-height - root.status-height;
+            background: @linear-gradient(90deg, #00000012 0%, #00000000 100%);
+        }
+
+        Rectangle {
+            x: 0;
+            y: root.bar-height;
+            width: 100%;
+            height: 5px;
+            background: @linear-gradient(180deg, #00000012 0%, #00000000 100%);
+        }
+
+        Rectangle {
+            x: 0;
+            y: root.height - root.status-height - 5px;
+            width: 100%;
+            height: 5px;
+            background: @linear-gradient(0deg, #00000012 0%, #00000000 100%);
+        }
+
+        // A etapa em construção. Fica **por cima** da tela de criação, e não
+        // dentro dela: assim a tela continua montada e o modal só detalha um
+        // passo do que já está na tela.
+        if root.create-workflow-step-open: WorkflowStepDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            tool-names: root.create-workflow-tool-names;
+            selected-tool <=> root.create-workflow-selected-tool;
+            command-names: root.create-workflow-command-names;
+            selected-command <=> root.create-workflow-selected-command;
+            show-param: root.create-workflow-show-param;
+            param-label: root.create-workflow-param-label;
+            param-text <=> root.create-workflow-param-text;
+            workdir-text <=> root.create-workflow-step-workdir;
+            selected-on-error <=> root.create-workflow-selected-on-error;
+            error-text: root.create-workflow-step-error;
+            selection-changed => {
+                root.create-workflow-selection-changed();
+            }
+            close-requested => {
+                root.close-workflow-step();
+            }
+            confirm-requested => {
+                root.add-workflow-step();
+            }
+        }
+
+        if root.create-profile-open: CreateProfileDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            tool-names: root.create-profile-tool-names;
+            selected-tool <=> root.create-profile-selected-tool;
+            command-names: root.create-profile-command-names;
+            selected-command <=> root.create-profile-selected-command;
+            show-param: root.create-profile-show-param;
+            param-label: root.create-profile-param-label;
+            param-text <=> root.create-profile-param-text;
+            name-text <=> root.create-profile-name;
+            error-text <=> root.create-profile-error;
+            selection-changed => {
+                root.create-profile-selection-changed();
+            }
+            close-requested => {
+                root.close-create-profile();
+            }
+            confirm-requested => {
+                root.confirm-create-profile();
+            }
+        }
+
+        if root.create-workspace-open: CreateWorkspaceDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            name-text <=> root.create-workspace-name;
+            workdir-text <=> root.create-workspace-workdir;
+            error-text: root.create-workspace-error;
+            close-requested => {
+                root.close-create-workspace();
+            }
+            confirm-requested => {
+                root.confirm-create-workspace();
+            }
+        }
+
+        if root.run-open: RunActionDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            tool-name: root.run-tool-name;
+            workdir-text: root.workdir-text;
+            command-names: root.run-command-names;
+            selected-command <=> root.run-selected-command;
+            show-param: root.run-show-param;
+            param-label: root.run-param-label;
+            param-text <=> root.run-param-text;
+            execution-status: root.run-status;
+            execution-exit-code: root.run-exit-code;
+            execution-output: root.run-output;
+            selection-changed => {
+                root.run-selection-changed();
+            }
+            run-requested => {
+                root.run-quick-action();
+            }
+            close-requested => {
+                root.close-run-dialog();
+            }
+        }
+
+        if root.tool-actions-open: ToolActionsDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            tool-name: root.tool-actions-name;
+            is-favorite: root.tool-actions-is-favorite;
+            in-workspace: root.tool-actions-in-workspace;
+            toggle-favorite-requested => {
+                root.tool-actions-toggle-favorite();
+            }
+            toggle-workspace-requested => {
+                root.tool-actions-toggle-workspace();
+            }
+            create-profile-requested => {
+                root.tool-actions-create-profile();
+            }
+            close-requested => {
+                root.close-tool-actions();
+            }
+        }
+
+        // Ferramenta + Workdir próprio. O `!choose-workdir-open` é o "um modal por
+        // vez": o seletor de pastas **substitui** esta camada em vez de empilhar
+        // sobre ela, e ao fechar o seletor esta volta com o caminho já aplicado.
+        if root.tool-detail-open && !root.choose-workdir-open: ToolDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            tool-name: root.selected-tool-name;
+            manifest-version-text: root.manifest-version-text;
+            workdir-text <=> root.tool-workdir-text;
+            command-names: root.command-names;
+            selected-command <=> root.selected-command;
+            show-param: root.show-param;
+            param-label: root.param-label;
+            param-text <=> root.param-text;
+            execution-status: root.execution-status;
+            execution-exit-code: root.execution-exit-code;
+            execution-output: root.execution-output;
+            history-labels: root.history-labels;
+            selected-history <=> root.selected-history;
+            history-page-info: root.history-page-info;
+            close-requested => {
+                root.close-tool-detail();
+            }
+            selection-changed => {
+                root.tool-selection-changed();
+            }
+            run-requested => {
+                root.run-action();
+            }
+            choose-workdir-requested => {
+                root.open-choose-tool-workdir();
+            }
+            history-selection-changed => {
+                root.history-selection-changed();
+            }
+            history-page-requested(page) => {
+                root.history-page-requested(page);
+            }
+        }
+
+        if root.choose-workdir-open: ChooseWorkdirDialog {
+            width: 100%;
+            height: 100%;
+            x: 0;
+            y: 0;
+            open: true;
+            busy: root.busy;
+            title: root.choose-workdir-title;
+            hint: root.choose-workdir-hint;
+            path-text <=> root.choose-workdir-path;
+            entries: root.choose-workdir-entries;
+            selected-entry <=> root.choose-workdir-selected;
+            error-text: root.choose-workdir-error;
+            entry-selected(idx) => {
+                root.choose-workdir-entry-selected(idx);
+            }
+            go-requested => {
+                root.choose-workdir-go();
+            }
+            apply-requested => {
+                root.choose-workdir-apply();
+            }
+            close-requested => {
+                root.close-choose-workdir();
+            }
+        }
+    }
+}

@@ -1,0 +1,139 @@
+import { ComboBox } from "std-widgets.slint";
+import { IconKind } from "./icons.slint";
+import { LightPrimaryButton, LightSecondaryButton, LightTextField } from "./light-controls.slint";
+import { Modal } from "./modal.slint";
+
+/// Diálogo para criar um perfil — escolha própria de ferramenta e ação.
+export component CreateProfileDialog {
+    in-out property <bool> open: false;
+    in-out property <bool> busy: false;
+
+    in property <[string]> tool-names: [];
+    in-out property <int> selected-tool: 0;
+    in property <[string]> command-names: [];
+    in-out property <int> selected-command: 0;
+    in-out property <bool> show-param: false;
+    in-out property <string> param-label: "Parâmetro";
+    in-out property <string> param-text: "";
+
+    in-out property <string> name-text: "";
+    in-out property <string> error-text: "";
+
+    callback selection-changed();
+    callback close-requested();
+    callback confirm-requested();
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        width: 100%;
+        height: 100%;
+        open: root.open;
+        busy: root.busy;
+        title: "Criar perfil";
+        panel-width: 400px;
+        close-requested => {
+            if (!root.busy) {
+                root.close-requested();
+            }
+        }
+
+        VerticalLayout {
+            spacing: 10px;
+
+            Text {
+                text: "Escolha a ferramenta, a ação e um nome para reutilizar depois.";
+                wrap: word-wrap;
+                color: #9a9996;
+                font-size: 12px;
+            }
+
+            Text {
+                text: "Ferramenta";
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            ComboBox {
+                model: root.tool-names;
+                current-index <=> root.selected-tool;
+                enabled: !root.busy && root.tool-names.length > 0;
+                selected => { root.selection-changed(); }
+            }
+
+            Text {
+                text: "Ação";
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            ComboBox {
+                model: root.command-names;
+                current-index <=> root.selected-command;
+                enabled: !root.busy && root.command-names.length > 0;
+                selected => { root.selection-changed(); }
+            }
+
+            if root.show-param: VerticalLayout {
+                spacing: 6px;
+
+                Text {
+                    text: root.param-label;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #5e5c64;
+                }
+
+                LightTextField {
+                    text <=> root.param-text;
+                    enabled: !root.busy;
+                }
+            }
+
+            Text {
+                text: "Nome do perfil";
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            LightTextField {
+                text <=> root.name-text;
+                enabled: !root.busy;
+                placeholder: "Ex.: Git status no projeto";
+            }
+
+            if root.error-text != "": Text {
+                text: root.error-text;
+                wrap: word-wrap;
+                color: #c01c28;
+                font-size: 12px;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+
+                LightSecondaryButton {
+                    text: "Cancelar";
+                    enabled: !root.busy;
+                    clicked => {
+                        root.close-requested();
+                    }
+                }
+
+                LightPrimaryButton {
+                    text: root.busy ? "Salvando…" : "Salvar";
+                    icon: IconKind.check;
+                    enabled: !root.busy;
+                    clicked => {
+                        root.confirm-requested();
+                    }
+                }
+            }
+        }
+    }
+}

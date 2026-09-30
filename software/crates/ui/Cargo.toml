@@ -1,0 +1,13 @@
+[package]
+name = "uige-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UIGE Slint presentation layer"
+build = "build.rs"
+
+[dependencies]
+slint = { workspace = true }
+
+[build-dependencies]
+slint-build = { workspace = true }

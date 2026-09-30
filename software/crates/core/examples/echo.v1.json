@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "v1",
+  "id": "echo",
+  "name": "Echo",
+  "description": "Ferramenta de demonstração que imprime texto no stdout.",
+  "executable": "echo",
+  "commands": [
+    {
+      "id": "print",
+      "name": "Imprimir",
+      "description": "Imprime a mensagem informada.",
+      "parameters": [
+        {
+          "id": "message",
+          "name": "Mensagem",
+          "type": "string",
+          "required": true,
+          "default": "hello UIGE"
+        }
+      ]
+    }
+  ]
+}

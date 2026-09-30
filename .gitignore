@@ -1,1 +1,12 @@
+# Cursor
 .cursor/
+
+# Rust
+software/target/
+**/*.rs.bk
+
+# SQLite local (se criada na raiz do repo)
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

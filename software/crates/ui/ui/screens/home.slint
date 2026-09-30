@@ -1,0 +1,192 @@
+import { ScrollView } from "std-widgets.slint";
+import { IconKind } from "../components/icons.slint";
+import { LightSecondaryButton } from "../components/light-controls.slint";
+import { PageBody } from "../components/page-body.slint";
+import { ToolRow } from "../components/tool-list.slint";
+
+/// Home: ponto de partida, não depósito de funcionalidades.
+///
+/// Mostra as **ferramentas favoritas do Workspace ativo** e o que rodou por
+/// último. As favoritas usam a mesma linha de Ferramentas (`ToolRow`), então as
+/// ações são as mesmas — só a lista é menor: só as marcadas como favoritas.
+///
+/// A Home mostra no máximo **10 favoritas** (`MAX_HOME_FAVORITES` no app): é um
+/// ponto de partida, não a lista de Ferramentas. Quando há mais, a nota abaixo da
+/// lista aponta onde encontrá-las — favorito escondido sem aviso viraria defeito.
+///
+/// Não contém formulário de execução nem importação de manifests: o modal ▶ e a
+/// tela da ferramenta pertencem à seção própria.
+export component HomeScreen {
+    in property <[string]> recent-executions: [];
+    in property <[string]> favorite-tools: [];
+    /// Vazia quando todas as favoritas cabem na Home.
+    in property <string> favorite-tools-note: "";
+
+    callback favorite-run-requested(int);
+    callback favorite-open-requested(int);
+    callback favorite-actions-requested(int);
+    callback create-profile-requested();
+    callback create-workflow-requested();
+    callback open-settings-requested();
+
+    // Preenche o pai: `100%` no elemento raiz resolveria contra a instância.
+    width: 100%;
+    height: 100%;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+
+        PageBody {
+            ScrollView {
+                width: 100%;
+                height: 100%;
+
+                VerticalLayout {
+                    padding-top: 16px;
+                    padding-bottom: 16px;
+                    spacing: 10px;
+
+                    Text {
+                        text: "Home";
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                    }
+
+                    Text {
+                        text: "Ferramentas favoritas";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    // Superfície do grupo: a lista se separa do fundo pelo tom, não por
+                    // uma caixa com borda.
+                    if root.favorite-tools.length == 0: Rectangle {
+                        height: 34px;
+                        border-radius: 8px;
+                        background: #f7f6f4;
+
+                        Text {
+                            x: 10px;
+                            width: parent.width - 20px;
+                            height: 100%;
+                            text: "Nenhuma favorita neste workspace. Marque em Ferramentas › Ações.";
+                            color: #9a9996;
+                            font-size: 12px;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                    }
+
+                    if root.favorite-tools.length > 0: Rectangle {
+                        height: favorite-rows.preferred-height + 8px;
+                        border-radius: 8px;
+                        background: #f7f6f4;
+                        drop-shadow-blur: 8px;
+                        drop-shadow-color: #00000012;
+                        drop-shadow-offset-y: 2px;
+
+                        favorite-rows := VerticalLayout {
+                            y: 4px;
+                            width: 100%;
+                            spacing: 2px;
+
+                            for item[idx] in root.favorite-tools: ToolRow {
+                                name: item;
+                                run-requested => {
+                                    root.favorite-run-requested(idx);
+                                }
+                                open-requested => {
+                                    root.favorite-open-requested(idx);
+                                }
+                                actions-requested => {
+                                    root.favorite-actions-requested(idx);
+                                }
+                            }
+                        }
+                    }
+
+                    if root.favorite-tools-note != "": Text {
+                        text: root.favorite-tools-note;
+                        color: #9a9996;
+                        font-size: 11px;
+                        overflow: elide;
+                    }
+
+                    Text {
+                        text: "Execuções recentes";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    Rectangle {
+                        height: recent-rows.preferred-height + 12px;
+                        border-radius: 8px;
+                        background: #f7f6f4;
+
+                        recent-rows := VerticalLayout {
+                            y: 6px;
+                            width: 100%;
+                            padding-left: 10px;
+                            padding-right: 10px;
+                            spacing: 3px;
+
+                            if root.recent-executions.length == 0: Text {
+                                text: "Nenhuma execução ainda. Comece pela seção Ferramentas.";
+                                color: #9a9996;
+                                font-size: 12px;
+                                overflow: elide;
+                            }
+
+                            for label in root.recent-executions: Text {
+                                text: label;
+                                color: #5e5c64;
+                                font-size: 12px;
+                                overflow: elide;
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "Criar";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #5e5c64;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        LightSecondaryButton {
+                            text: "Novo perfil";
+                            icon: IconKind.plus;
+                            clicked => {
+                                root.create-profile-requested();
+                            }
+                        }
+
+                        LightSecondaryButton {
+                            text: "Novo workflow";
+                            icon: IconKind.plus;
+                            clicked => {
+                                root.create-workflow-requested();
+                            }
+                        }
+
+                        LightSecondaryButton {
+                            text: "Adicionar ferramenta";
+                            icon: IconKind.plus;
+                            clicked => {
+                                root.open-settings-requested();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -62,6 +62,8 @@ Modos de abertura:
 
 Um perfil pode aparecer em vários Workspaces sem duplicação.
 
+O nome do Perfil é único dentro do Workspace (sem diferenciar maiúsculas/minúsculas): criar um perfil com nome já usado deve ser recusado, em vez de gerar duplicata.
+
 ## Workflows
 
 Um Workflow executa etapas ordenadas. Inicialmente deve permitir ao menos:
@@ -72,6 +74,8 @@ Um Workflow executa etapas ordenadas. Inicialmente deve permitir ao menos:
 - parar ou continuar em caso de erro.
 
 Capacidades futuras podem incluir retry, fallback, condições e compartilhamento de outputs entre etapas.
+
+**Estado da implementação:** o modelo, o motor de execução (ordem, Workdir por etapa, parar/continuar em caso de erro), a persistência, o histórico por etapa e a montagem/execução pela interface estão prontos. Detalhes de comportamento em `../architecture/execution-model.md`.
 
 ## Atalhos
 
@@ -89,6 +93,19 @@ O usuário avançado pode:
 - editar a definição;
 - usar modo simples ou avançado;
 - consultar e restaurar versões anteriores.
+
+### Descoberta e importação
+
+A descoberta lê os arquivos `*.json` de uma pasta — a padrão do app ou outra indicada pelo usuário — e lista o que é manifest válido. A descoberta não grava nada; arquivos inválidos aparecem com o motivo, sem interromper a listagem.
+
+A importação registra a definição no estado local e passa a ferramenta a integrar o Workspace. Regras:
+
+- importar o mesmo conteúdo de novo não cria versão;
+- conteúdo diferente para o mesmo `id` cria uma nova versão (histórico append-only);
+- um `id` já embutido no app é recusado: definição embutida não é substituída por importação;
+- a definição importada persiste e é recarregada ao reabrir o app.
+
+Detectar um executável para gerar a definição sozinho e editar/restaurar versões pela interface ainda não estão implementados.
 
 ## Histórico de definição
 

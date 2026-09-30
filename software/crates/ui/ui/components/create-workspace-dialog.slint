@@ -1,0 +1,102 @@
+import { IconKind } from "./icons.slint";
+import { LightPrimaryButton, LightSecondaryButton, LightTextField } from "./light-controls.slint";
+import { Modal } from "./modal.slint";
+
+/// Diálogo para criar um Workspace.
+///
+/// Só coleta nome e Workdir global; a curadoria de ferramentas é feita depois,
+/// em Ferramentas, para o diálogo não virar um formulário longo.
+export component CreateWorkspaceDialog {
+    in-out property <bool> open: false;
+    in-out property <bool> busy: false;
+
+    in-out property <string> name-text: "";
+    in-out property <string> workdir-text: "";
+    in-out property <string> error-text: "";
+
+    callback close-requested();
+    callback confirm-requested();
+
+    width: 100%;
+    height: 100%;
+
+    Modal {
+        width: 100%;
+        height: 100%;
+        open: root.open;
+        busy: root.busy;
+        title: "Novo workspace";
+        panel-width: 400px;
+        close-requested => {
+            if (!root.busy) {
+                root.close-requested();
+            }
+        }
+
+        VerticalLayout {
+            spacing: 10px;
+
+            Text {
+                text: "Um workspace separa ferramentas, perfis e um workdir próprio por contexto.";
+                wrap: word-wrap;
+                color: #9a9996;
+                font-size: 12px;
+            }
+
+            Text {
+                text: "Nome";
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            LightTextField {
+                text <=> root.name-text;
+                enabled: !root.busy;
+                placeholder: "Ex.: Segurança";
+            }
+
+            Text {
+                text: "Workdir global";
+                font-size: 12px;
+                font-weight: 600;
+                color: #5e5c64;
+            }
+
+            LightTextField {
+                text <=> root.workdir-text;
+                enabled: !root.busy;
+                placeholder: "Deixe vazio para usar o diretório atual";
+            }
+
+            if root.error-text != "": Text {
+                text: root.error-text;
+                wrap: word-wrap;
+                color: #c01c28;
+                font-size: 12px;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+
+                LightSecondaryButton {
+                    text: "Cancelar";
+                    enabled: !root.busy;
+                    clicked => {
+                        root.close-requested();
+                    }
+                }
+
+                LightPrimaryButton {
+                    text: root.busy ? "Criando…" : "Criar";
+                    icon: IconKind.plus;
+                    enabled: !root.busy;
+                    clicked => {
+                        root.confirm-requested();
+                    }
+                }
+            }
+        }
+    }
+}
